@@ -293,10 +293,13 @@ function Shot(weapon,aam)
 
         self.fd = math.sqrt(p.x^2 + p.y^2 + p.z^2) * feet_per_meter / feet_per_nm
 
-        -- trigger.action.outText("TA : " .. string.format("%.0f",self.ta) .. " AA : " .. string.format("%.0f",self.aa) .. " FD : " .. string.format("%.2f",self.fd),  1, true) 
+        trigger.action.outText("TA : " .. string.format("%.0f",self.ta) .. " AA : " .. string.format("%.0f",self.aa) .. " FD : " .. string.format("%.2f",self.fd),  1, true) 
     end
 
     function obj:tracking()
+        if self.weapon == nil then
+            return
+        end
         return self.weapon:getTarget() ~= nil
     end
 
