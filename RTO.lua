@@ -7,6 +7,7 @@ local AspectAngle = {
 
 local feet_per_meter = 3.28084
 local feet_per_nm    = 6000
+local ms_per_mach    = 343
 
 function AAM()
     local obj = {}
@@ -17,6 +18,14 @@ function AAM()
 
     function obj:isAAM()
         return false
+    end
+
+    function obj:isExist(shot)
+        return false
+    end
+
+    function obj:getMinMach()
+        return 100
     end
 
     return obj
@@ -31,12 +40,17 @@ function AAM_AIM120C()
     obj.DR       = 27
     obj.STERNWEZ = 23
 
+    obj.minMach  = 1
+
     function obj:valid(shot)
-        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
+            return true
+        end
+        if shot:getMach()   < self.minMach                                     then
             return false
         end
-        if shot:shotRange() >= self.MAR      + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Flank
+        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+            return false
         end
         if shot:shotRange() >= self.DR       + shot:TARange() + shot:SARange() then
             return shot:aspectAngle() >= AspectAngle.Beam
@@ -44,13 +58,18 @@ function AAM_AIM120C()
         if shot:shotRange() >= self.STERNWEZ + shot:TARange() + shot:SARange() then
             return shot:aspectAngle() >= AspectAngle.Drag
         end
-        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
-            return true
-        end
     end
 
     function obj:isAAM()
         return true
+    end
+
+    function obj:isExist(shot)
+        return shot:getMach() > self.minMach
+    end
+
+    function obj:getMinMach()
+        return self.minMach
     end
 
     return obj
@@ -65,12 +84,17 @@ function AAM_AIM120()
     obj.DR       = 25
     obj.STERNWEZ = 21
 
+    obj.minMach  = 1
+
     function obj:valid(shot)
-        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
+            return true
+        end
+        if shot:getMach()   < self.minMach                                     then
             return false
         end
-        if shot:shotRange() >= self.MAR      + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Flank
+        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+            return false
         end
         if shot:shotRange() >= self.DR       + shot:TARange() + shot:SARange() then
             return shot:aspectAngle() >= AspectAngle.Beam
@@ -78,13 +102,18 @@ function AAM_AIM120()
         if shot:shotRange() >= self.STERNWEZ + shot:TARange() + shot:SARange() then
             return shot:aspectAngle() >= AspectAngle.Drag
         end
-        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
-            return true
-        end
     end
 
     function obj:isAAM()
         return true
+    end
+
+    function obj:isExist(shot)
+        return shot:getMach() > self.minMach
+    end
+
+    function obj:getMinMach()
+        return self.minMach
     end
 
     return obj
@@ -99,12 +128,17 @@ function AAM_SD_10()
     obj.DR       = 23
     obj.STERNWEZ = 19
 
+    obj.minMach  = 1
+
     function obj:valid(shot)
-        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
+            return true
+        end
+        if shot:getMach()   < self.minMach                                     then
             return false
         end
-        if shot:shotRange() >= self.MAR      + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Flank
+        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+            return false
         end
         if shot:shotRange() >= self.DR       + shot:TARange() + shot:SARange() then
             return shot:aspectAngle() >= AspectAngle.Beam
@@ -112,13 +146,18 @@ function AAM_SD_10()
         if shot:shotRange() >= self.STERNWEZ + shot:TARange() + shot:SARange() then
             return shot:aspectAngle() >= AspectAngle.Drag
         end
-        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
-            return true
-        end
     end
 
     function obj:isAAM()
         return true
+    end
+
+    function obj:isExist(shot)
+        return shot:getMach() > self.minMach
+    end
+
+    function obj:getMinMach()
+        return self.minMach
     end
 
     return obj
@@ -133,12 +172,17 @@ function AAM_P_77()
     obj.DR       = 19
     obj.STERNWEZ = 15
 
+    obj.minMach  = 1
+
     function obj:valid(shot)
-        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
+            return true
+        end
+        if shot:getMach()   < self.minMach                                     then
             return false
         end
-        if shot:shotRange() >= self.MAR      + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Flank
+        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+            return false
         end
         if shot:shotRange() >= self.DR       + shot:TARange() + shot:SARange() then
             return shot:aspectAngle() >= AspectAngle.Beam
@@ -146,13 +190,18 @@ function AAM_P_77()
         if shot:shotRange() >= self.STERNWEZ + shot:TARange() + shot:SARange() then
             return shot:aspectAngle() >= AspectAngle.Drag
         end
-        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
-            return true
-        end
     end
 
     function obj:isAAM()
         return true
+    end
+
+    function obj:isExist(shot)
+        return shot:getMach() > self.minMach
+    end
+
+    function obj:getMinMach()
+        return self.minMach
     end
 
     return obj
@@ -167,15 +216,20 @@ function AAM_P_27PE()
     obj.DR       = 15
     obj.STERNWEZ = 9
 
+    obj.minMach  = 1
+
     function obj:valid(shot)
         if shot:tracking() == false then
             return false
         end
-        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
+            return true
+        end
+        if shot:getMach()   < self.minMach                                     then
             return false
         end
-        if shot:shotRange() >= self.MAR      + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Flank
+        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+            return false
         end
         if shot:shotRange() >= self.DR       + shot:TARange() + shot:SARange() then
             return shot:aspectAngle() >= AspectAngle.Beam
@@ -183,13 +237,18 @@ function AAM_P_27PE()
         if shot:shotRange() >= self.STERNWEZ + shot:TARange() + shot:SARange() then
             return shot:aspectAngle() >= AspectAngle.Drag
         end
-        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
-            return true
-        end
     end
 
     function obj:isAAM()
         return true
+    end
+
+    function obj:isExist(shot)
+        return shot:getMach() > self.minMach
+    end
+
+    function obj:getMinMach()
+        return self.minMach
     end
 
     return obj
@@ -197,16 +256,16 @@ end
 
 function Missile(w)
     -- trigger.action.outText(w:getTypeName(), 10, true)
-    if w:getTypeName() == "AIM_120C" then
+    if     w:getTypeName() == "AIM_120C" then
         return AAM_AIM120C()
-    elseif w:getTypeName() == "AIM_120" then
+    elseif w:getTypeName() == "AIM_120"  then
         return AAM_AIM120()
-    elseif w:getTypeName() == "P_77" then
-        return AAM_P_77()
-    elseif w:getTypeName() == "SD-10" then
-        return AAM_SD_10()
-    elseif w:getTypeName() == "P_27PE" then
-        return AAM_P_27PE()
+    elseif w:getTypeName() == "P_77"     then
+        return AAM_P_77() 
+    elseif w:getTypeName() == "SD-10"    then
+        return AAM_SD_10() 
+    elseif w:getTypeName() == "P_27PE"   then
+       return AAM_P_27PE()
     else
         return AAM()
     end
@@ -231,9 +290,14 @@ function Shot(weapon,aam)
     obj.td = 9999;                 -- target to shot position distance
     obj.sr = sr                    -- shot range
     obj.sa = l.y * feet_per_meter  -- shot altitude
+    obj.mm = 100;                  -- missile mach
+    obj.fb = false;                -- flag burst
 
     function obj:isExist()
         if self.target == nil then
+            return false
+        end
+        if self.aam:isExist(self) == false then
             return false
         end
         if self.weapon:isExist() then
@@ -252,11 +316,20 @@ function Shot(weapon,aam)
         end
 
         local ps = self.shotPosition             -- position    shot
+        local vw = self.weapon:getVelocity()     -- velocity    weapon
         local pw = self.weapon:getPosition().p   -- position    weapon
         local pt = self.target:getPosition().p   -- position    target
         local ot = self.target:getPosition().z   -- orientation target
 
         self.ta = pt.y * feet_per_meter
+        self.mm = math.sqrt(vw.x^2 + vw.y^2 + vw.z^2) / ms_per_mach;
+
+        -- check if missile rocket burst started
+        if self.fb == false then
+            if self.mm > self.aam:getMinMach() then
+                self.fb = true;
+            end
+        end
 
         -- aspect angle from shot position to the target
         local p = {
@@ -293,7 +366,7 @@ function Shot(weapon,aam)
 
         self.fd = math.sqrt(p.x^2 + p.y^2 + p.z^2) * feet_per_meter / feet_per_nm
 
-        trigger.action.outText("TA : " .. string.format("%.0f",self.ta) .. " AA : " .. string.format("%.0f",self.aa) .. " FD : " .. string.format("%.2f",self.fd),  1, true) 
+        trigger.action.outText("TA : " .. string.format("%.0f",self.ta) .. " AA : " .. string.format("%.0f",self.aa) .. " FD : " .. string.format("%.2f",self.fd) .. " MACH : " .. string.format("%.2f",self.mm),  1, true) 
     end
 
     function obj:tracking()
@@ -321,6 +394,14 @@ function Shot(weapon,aam)
 
     function obj:SARange()
         return (self.sa - 35000) * 2 / 10000
+    end
+
+    function obj:getMach()
+        if self.fb == false then
+            return 100
+        else
+            return self.mm
+        end
     end
 
     function obj:valid()
