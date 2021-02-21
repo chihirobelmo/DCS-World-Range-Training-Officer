@@ -246,7 +246,7 @@ end
 function AGM_AGM_88()
     local obj = {}
 
-    obj.RMAX     = 39
+    obj.RMAX     = 60
     obj.DOR      = 25
     obj.MAR      = 13
     obj.DR       = 15
@@ -258,7 +258,7 @@ function AGM_AGM_88()
         if shot:tracking() == false then
             return false
         end
-        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+        if shot:shotRange() >  self.RMAX + shot:SARange() then
             return false
         end
         return true
