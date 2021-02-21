@@ -122,30 +122,19 @@ end
 function AAM_SD_10()
     local obj = {}
 
-    obj.RMAX     = 54
-    obj.DOR      = 32
-    obj.MAR      = 27
-    obj.DR       = 23
-    obj.STERNWEZ = 19
+    obj.RMAX     = 60
+    obj.DOR      = 60
+    obj.MAR      = 60
+    obj.DR       = 60
+    obj.STERNWEZ = 60
 
-    obj.minMach  = 1
+    obj.minMach  = 0.1
 
     function obj:valid(shot)
-        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
-            return true
-        end
-        if shot:getMach()   < self.minMach                                     then
+        if shot:shotRange() > self.RMAX + shot:SARange() then
             return false
         end
-        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
-            return false
-        end
-        if shot:shotRange() >= self.DR       + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Beam
-        end
-        if shot:shotRange() >= self.STERNWEZ + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Drag
-        end
+        return true
     end
 
     function obj:isAAM()
@@ -254,6 +243,43 @@ function AAM_P_27PE()
     return obj
 end
 
+function AGM_AGM_88()
+    local obj = {}
+
+    obj.RMAX     = 39
+    obj.DOR      = 25
+    obj.MAR      = 13
+    obj.DR       = 15
+    obj.STERNWEZ = 9
+
+    obj.minMach  = 1
+
+    function obj:valid(shot)
+        if shot:tracking() == false then
+            return false
+        end
+        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+            return false
+        end
+        return true
+    end
+
+    function obj:isAAM()
+        return true
+    end
+
+    function obj:isExist(shot)
+        --trigger.action.outText(timer.getTime() .. "  " .. shot:getTime(),10,true)
+        return timer.getTime() - shot:getTime() > 90
+    end
+
+    function obj:getMinMach()
+        return self.minMach
+    end
+
+    return obj
+end
+
 function Missile(w)
     -- trigger.action.outText(w:getTypeName(), 10, true)
     if     w:getTypeName() == "AIM_120C" then
@@ -266,6 +292,8 @@ function Missile(w)
         return AAM_SD_10() 
     elseif w:getTypeName() == "P_27PE"   then
        return AAM_P_27PE()
+    elseif w:getTypeName() == "AGM_88"   then
+       return AGM_AGM_88()
     else
         return AAM()
     end
@@ -292,6 +320,8 @@ function Shot(weapon,aam)
     obj.sa = l.y * feet_per_meter  -- shot altitude
     obj.mm = 100;                  -- missile mach
     obj.fb = false;                -- flag burst
+
+    obj.time = timer.getTime()
 
     function obj:isExist()
         if self.target == nil then
@@ -366,7 +396,7 @@ function Shot(weapon,aam)
 
         self.fd = math.sqrt(p.x^2 + p.y^2 + p.z^2) * feet_per_meter / feet_per_nm
 
-        trigger.action.outText("TA : " .. string.format("%.0f",self.ta) .. " AA : " .. string.format("%.0f",self.aa) .. " FD : " .. string.format("%.2f",self.fd) .. " MACH : " .. string.format("%.2f",self.mm),  1, true) 
+        --trigger.action.outText("TA : " .. string.format("%.0f",self.ta) .. " AA : " .. string.format("%.0f",self.aa) .. " FD : " .. string.format("%.2f",self.fd) .. " MACH : " .. string.format("%.2f",self.mm),  1, true) 
     end
 
     function obj:tracking()
@@ -374,6 +404,10 @@ function Shot(weapon,aam)
             return
         end
         return self.weapon:getTarget() ~= nil
+    end
+
+    function obj:getTime()
+        return self.time
     end
 
     function obj:aspectAngle()
@@ -436,6 +470,8 @@ function RTO()
         end
 
         local aam = Missile(event.weapon)
+
+        -- trigger.action.outText(event.weapon:getTypeName(),10,true)
 
         if aam:isAAM() == false then
             return
