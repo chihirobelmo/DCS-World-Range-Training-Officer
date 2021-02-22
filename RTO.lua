@@ -9,14 +9,14 @@ local feet_per_meter = 3.28084
 local feet_per_nm    = 6000
 local ms_per_mach    = 343
 
-function AAM()
+function AAM_NULL()
     local obj = {}
 
     function obj:valid(shot)
         return false
     end
 
-    function obj:isAAM()
+    function obj:hasCriteria()
         return false
     end
 
@@ -47,29 +47,29 @@ function AAM_AIM120C()
     obj.minMach  = 1
 
     function obj:valid(shot)
-        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
+        if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             return true
         end
-        if shot:getMach()   < self.minMach                                     then
+        if shot:getMissileSpeedMach() < self.minMach                                                  then
             return false
         end
-        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+        if shot:shotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             return false
         end
-        if shot:shotRange() >= self.DR       + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Beam
+        if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
-        if shot:shotRange() >= self.STERNWEZ + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Drag
+        if shot:shotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            return shot:getTargetAspectAngle() >= AspectAngle.Drag
         end
     end
 
-    function obj:isAAM()
+    function obj:hasCriteria()
         return true
     end
 
     function obj:isExist(shot)
-        return shot:getMach() > self.minMach
+        return shot:getMissileSpeedMach() > self.minMach
     end
 
     function obj:getMinMach()
@@ -95,29 +95,29 @@ function AAM_AIM120()
     obj.minMach  = 1
 
     function obj:valid(shot)
-        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
+        if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             return true
         end
-        if shot:getMach()   < self.minMach                                     then
+        if shot:getMissileSpeedMach() < self.minMach                                                  then
             return false
         end
-        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+        if shot:shotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             return false
         end
-        if shot:shotRange() >= self.DR       + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Beam
+        if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
-        if shot:shotRange() >= self.STERNWEZ + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Drag
+        if shot:shotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            return shot:getTargetAspectAngle() >= AspectAngle.Drag
         end
     end
 
-    function obj:isAAM()
+    function obj:hasCriteria()
         return true
     end
 
     function obj:isExist(shot)
-        return shot:getMach() > self.minMach
+        return shot:getMissileSpeedMach() > self.minMach
     end
 
     function obj:getMinMach()
@@ -143,29 +143,29 @@ function AAM_SD_10()
     obj.minMach  = 0.1
 
     function obj:valid(shot)
-        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
+        if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             return true
         end
-        if shot:getMach()   < self.minMach                                     then
+        if shot:getMissileSpeedMach() < self.minMach                                                  then
             return false
         end
-        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+        if shot:shotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             return false
         end
-        if shot:shotRange() >= self.DR       + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Beam
+        if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
-        if shot:shotRange() >= self.STERNWEZ + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Drag
+        if shot:shotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            return shot:getTargetAspectAngle() >= AspectAngle.Drag
         end
     end
 
-    function obj:isAAM()
+    function obj:hasCriteria()
         return true
     end
 
     function obj:isExist(shot)
-        return shot:getMach() > self.minMach
+        return shot:getMissileSpeedMach() > self.minMach
     end
 
     function obj:getMinMach()
@@ -191,29 +191,29 @@ function AAM_P_77()
     obj.minMach  = 1
 
     function obj:valid(shot)
-        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
+        if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             return true
         end
-        if shot:getMach()   < self.minMach                                     then
+        if shot:getMissileSpeedMach() < self.minMach                                                  then
             return false
         end
-        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+        if shot:shotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             return false
         end
-        if shot:shotRange() >= self.DR       + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Beam
+        if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
-        if shot:shotRange() >= self.STERNWEZ + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Drag
+        if shot:shotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            return shot:getTargetAspectAngle() >= AspectAngle.Drag
         end
     end
 
-    function obj:isAAM()
+    function obj:hasCriteria()
         return true
     end
 
     function obj:isExist(shot)
-        return shot:getMach() > self.minMach
+        return shot:getMissileSpeedMach() > self.minMach
     end
 
     function obj:getMinMach()
@@ -239,32 +239,32 @@ function AAM_P_27PE()
     obj.minMach  = 1
 
     function obj:valid(shot)
-        if shot:tracking() == false then
+        if shot:isMissileTrackingTgt() == false then
             return false
         end
-        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
+        if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             return true
         end
-        if shot:getMach()   < self.minMach                                     then
+        if shot:getMissileSpeedMach() < self.minMach                                                  then
             return false
         end
-        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+        if shot:shotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             return false
         end
-        if shot:shotRange() >= self.DR       + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Beam
+        if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
-        if shot:shotRange() >= self.STERNWEZ + shot:TARange() + shot:SARange() then
-            return shot:aspectAngle() >= AspectAngle.Drag
+        if shot:shotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            return shot:getTargetAspectAngle() >= AspectAngle.Drag
         end
     end
 
-    function obj:isAAM()
+    function obj:hasCriteria()
         return true
     end
 
     function obj:isExist(shot)
-        return shot:getMach() > self.minMach
+        return shot:getMissileSpeedMach() > self.minMach
     end
 
     function obj:getMinMach()
@@ -290,25 +290,24 @@ function AGM_AGM_88()
     obj.minMach  = 1
 
     function obj:valid(shot)
-        if shot:tracking() == false then
+        if shot:isMissileTrackingTgt() == false then
             return false
         end
         if shot:isTargetRadarActive() == false then
             return false
         end
-        if shot:shotRange() >  self.RMAX + shot:SARange() then
+        if shot:shotRangeNm() > self.RMAX + shot:getShotAltFactorNm() then
             return false
         end
         return true
     end
 
-    function obj:isAAM()
+    function obj:hasCriteria()
         return true
     end
 
     function obj:isExist(shot)
-        --trigger.action.outText(timer.getTime() .. "  " .. shot:getTime(),10,true)
-        return timer.getTime() - shot:getTime() > 90
+        return timer.getTime() - shot:getShotTime() > 90
     end
 
     function obj:getMinMach()
@@ -333,35 +332,35 @@ function Missile(w)
     elseif w:getTypeName() == "SD-10"    then
         return AAM_SD_10() 
     elseif w:getTypeName() == "P_27PE"   then
-       return AAM_P_27PE()
+        return AAM_P_27PE()
     elseif w:getTypeName() == "AGM_88"   then
-       return AGM_AGM_88()
+        return AGM_AGM_88()
     else
-        return AAM()
+        return AAM_NULL()
     end
 end
 
-function Shot(weapon,aam)
+function Shot(weapon,misile)
     local obj = {}
 
     local l  = weapon:getLauncher():getPosition().p
     local t  = weapon:getTarget():getPosition().p
     local sr = math.sqrt((l.x-t.x)^2 + (l.y-t.y)^2 + (l.z-t.z)^2) * feet_per_meter / feet_per_nm
 
-    obj.aam = aam
+    obj.misile = misile
 
     obj.weapon       = weapon
     obj.target       = weapon:getTarget()
     obj.shotPosition = weapon:getPosition().p
 
-    obj.aa = 180                   -- shot position to target aspect angle
-    obj.fd = 0;                    -- missile flew distance
-    obj.ta = 35000;                -- target altitude
-    obj.td = 9999;                 -- target to shot position distance
-    obj.sr = sr                    -- shot range
-    obj.sa = l.y * feet_per_meter  -- shot altitude
-    obj.mm = 100;                  -- missile mach
-    obj.fb = false;                -- flag burst
+    obj.targetAspectAngle       = 180                   -- shot position to target aspect angle
+    obj.missileFlewDistance     = 0;                    -- missile flew distance
+    obj.targetAltitude          = 35000;                -- target altitude
+    obj.targetToShotPosDistance = 9999;                 -- target to shot position distance
+    obj.shotRange               = sr                    -- shot range
+    obj.shotAltitude            = l.y * feet_per_meter  -- shot altitude
+    obj.missileSpeedMach        = 100;                  -- missile mach
+    obj.flagMissileBurst        = false;                -- flag burst
 
     obj.time = timer.getTime()
 
@@ -369,11 +368,11 @@ function Shot(weapon,aam)
         if self.target == nil then
             return false
         end
-        if self.aam:isExist(self) == false then
+        if self.misile:isExist(self) == false then
             return false
         end
         if self.weapon:isExist() then
-            return self.td >= self.fd
+            return self.targetToShotPosDistance >= self.missileFlewDistance
         else
             return false
         end
@@ -393,13 +392,13 @@ function Shot(weapon,aam)
         local pt = self.target:getPosition().p   -- position    target
         local ot = self.target:getPosition().z   -- orientation target
 
-        self.ta = pt.y * feet_per_meter
-        self.mm = math.sqrt(vw.x^2 + vw.y^2 + vw.z^2) / ms_per_mach;
+        self.targetAltitude   = pt.y * feet_per_meter
+        self.missileSpeedMach = math.sqrt(vw.x^2 + vw.y^2 + vw.z^2) / ms_per_mach;
 
         -- check if missile rocket burst started
-        if self.fb == false then
-            if self.mm > self.aam:getMinMach() then
-                self.fb = true;
+        if self.flagMissileBurst == false then
+            if self.missileSpeedMach > self.misile:getMinMach() then
+                self.flagMissileBurst = true;
             end
         end
 
@@ -410,7 +409,7 @@ function Shot(weapon,aam)
             z = ps.z - pt.z
         }
 
-        self.td = math.sqrt(p.x^2 + p.y^2 + p.z^2) * feet_per_meter / feet_per_nm
+        self.targetToShotPosDistance = math.sqrt(p.x^2 + p.y^2 + p.z^2) * feet_per_meter / feet_per_nm
 
         local rh =      (1 + (math.atan2(p.z,  p.x ) / math.pi)) * 180
         local oh = 90 + (1 + (math.atan2(ot.z, ot.x) / math.pi)) * 180
@@ -427,7 +426,7 @@ function Shot(weapon,aam)
             raa = 360 - (oh - rh)
         end
         
-        self.aa = math.abs(raa)
+        self.targetAspectAngle = math.abs(raa)
 
         -- missile flew distance from shot range
         local p = {
@@ -436,12 +435,12 @@ function Shot(weapon,aam)
             z = ps.z - pw.z
         }
 
-        self.fd = math.sqrt(p.x^2 + p.y^2 + p.z^2) * feet_per_meter / feet_per_nm
+        self.missileFlewDistance = math.sqrt(p.x^2 + p.y^2 + p.z^2) * feet_per_meter / feet_per_nm
 
-        --trigger.action.outText("TA : " .. string.format("%.0f",self.ta) .. " AA : " .. string.format("%.0f",self.aa) .. " FD : " .. string.format("%.2f",self.fd) .. " MACH : " .. string.format("%.2f",self.mm),  1, true) 
+        --trigger.action.outText("TA : " .. string.format("%.0f",self.targetAltitude) .. " AA : " .. string.format("%.0f",self.targetAspectAngle) .. " FD : " .. string.format("%.2f",self.missileFlewDistance) .. " MACH : " .. string.format("%.2f",self.missileSpeedMach),  1, true) 
     end
 
-    function obj:tracking()
+    function obj:isMissileTrackingTgt()
         if self.weapon == nil then
             return
         end
@@ -459,35 +458,31 @@ function Shot(weapon,aam)
         return b
     end
 
-    function obj:getTime()
+    function obj:getShotTime()
         return self.time
     end
 
-    function obj:aspectAngle()
-        return self.aa
+    function obj:getTargetAspectAngle()
+        return self.targetAspectAngle
     end
 
-    function obj:shotRange()
-        return self.sr
+    function obj:shotRangeNm()
+        return self.shotRange
     end
 
-    function obj:targetRange()
-        return self.td
+    function obj:getTgtAltFactorNm()
+        return self.misile:altitudeCoefficient(self.targetAltitude)
     end
 
-    function obj:TARange()
-        return self.aam:altitudeCoefficient(self.ta)
+    function obj:getShotAltFactorNm()
+        return self.misile:altitudeCoefficient(self.shotAltitude)
     end
 
-    function obj:SARange()
-        return self.aam:altitudeCoefficient(self.sa)
-    end
-
-    function obj:getMach()
-        if self.fb == false then
+    function obj:getMissileSpeedMach()
+        if self.flagMissileBurst == false then
             return 100
         else
-            return self.mm
+            return self.missileSpeedMach
         end
     end
 
@@ -495,7 +490,7 @@ function Shot(weapon,aam)
         if self.target == nil then
             return
         end
-        if obj.aam:valid(self) == true then
+        if obj.misile:valid(self) == true then
             trigger.action.explosion(self.target:getPoint(), 100)
         end
     end
@@ -522,15 +517,15 @@ function RTO()
             return
         end
 
-        local aam = Missile(event.weapon)
+        local misile = Missile(event.weapon)
 
         -- trigger.action.outText(event.weapon:getTypeName(),10,true)
 
-        if aam:isAAM() == false then
+        if misile:hasCriteria() == false then
             return
         end
         
-        self.shot[#self.shot + 1] = Shot(event.weapon, aam)
+        self.shot[#self.shot + 1] = Shot(event.weapon, misile)
     end
     
     function obj:calc()
@@ -546,8 +541,6 @@ function RTO()
     
     return obj
 end
-
-
 
 rto = RTO()
 
