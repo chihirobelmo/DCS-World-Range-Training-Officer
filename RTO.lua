@@ -28,6 +28,10 @@ function AAM()
         return 100
     end
 
+    function obj:altitudeCoefficient(alt)
+        return (alt - 35000) * 2 / 10000
+    end
+
     return obj
 end
 
@@ -70,6 +74,10 @@ function AAM_AIM120C()
 
     function obj:getMinMach()
         return self.minMach
+    end
+
+    function obj:altitudeCoefficient(alt)
+        return (alt - 35000) * 2 / 10000
     end
 
     return obj
@@ -116,6 +124,10 @@ function AAM_AIM120()
         return self.minMach
     end
 
+    function obj:altitudeCoefficient(alt)
+        return (alt - 35000) * 2 / 10000
+    end
+
     return obj
 end
 
@@ -147,6 +159,10 @@ function AAM_SD_10()
 
     function obj:getMinMach()
         return self.minMach
+    end
+
+    function obj:altitudeCoefficient(alt)
+        return (alt - 35000) * 2 / 10000
     end
 
     return obj
@@ -191,6 +207,10 @@ function AAM_P_77()
 
     function obj:getMinMach()
         return self.minMach
+    end
+
+    function obj:altitudeCoefficient(alt)
+        return (alt - 35000) * 2 / 10000
     end
 
     return obj
@@ -240,6 +260,10 @@ function AAM_P_27PE()
         return self.minMach
     end
 
+    function obj:altitudeCoefficient(alt)
+        return (alt - 20000) * 3/ 10000
+    end
+
     return obj
 end
 
@@ -278,6 +302,10 @@ function AGM_AGM_88()
 
     function obj:getMinMach()
         return self.minMach
+    end
+
+    function obj:altitudeCoefficient(alt)
+        return (alt - 35000) * 2 / 10000
     end
 
     return obj
@@ -437,11 +465,11 @@ function Shot(weapon,aam)
     end
 
     function obj:TARange()
-        return (self.ta - 35000) * 2 / 10000
+        return self.aam:altitudeCoefficient(self.ta)
     end
 
     function obj:SARange()
-        return (self.sa - 35000) * 2 / 10000
+        return self.aam:altitudeCoefficient(self.sa)
     end
 
     function obj:getMach()
