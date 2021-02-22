@@ -143,10 +143,21 @@ function AAM_SD_10()
     obj.minMach  = 0.1
 
     function obj:valid(shot)
-        if shot:shotRange() > self.RMAX + shot:SARange() then
+        if shot:shotRange() <  self.STERNWEZ + shot:TARange() + shot:SARange() then
+            return true
+        end
+        if shot:getMach()   < self.minMach                                     then
             return false
         end
-        return true
+        if shot:shotRange() >  self.RMAX     + shot:TARange() + shot:SARange() then
+            return false
+        end
+        if shot:shotRange() >= self.DR       + shot:TARange() + shot:SARange() then
+            return shot:aspectAngle() >= AspectAngle.Beam
+        end
+        if shot:shotRange() >= self.STERNWEZ + shot:TARange() + shot:SARange() then
+            return shot:aspectAngle() >= AspectAngle.Drag
+        end
     end
 
     function obj:isAAM()
@@ -535,6 +546,8 @@ function RTO()
     
     return obj
 end
+
+
 
 rto = RTO()
 
