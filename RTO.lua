@@ -258,6 +258,9 @@ function AGM_AGM_88()
         if shot:tracking() == false then
             return false
         end
+        if shot:isTargetRadarActive() == false then
+            return false
+        end
         if shot:shotRange() >  self.RMAX + shot:SARange() then
             return false
         end
@@ -404,6 +407,17 @@ function Shot(weapon,aam)
             return
         end
         return self.weapon:getTarget() ~= nil
+    end
+
+    function obj:isTargetRadarActive()
+        if self.weapon == nil then
+            return
+        end
+        if self.weapon:getTarget() == nil then
+            return
+        end
+        b, t = self.weapon:getTarget():getRadar()
+        return b
     end
 
     function obj:getTime()
