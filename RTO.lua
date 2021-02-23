@@ -396,7 +396,10 @@ function AGM_AGM_88()
     end
 
     function obj:isExist(shot)
-        return timer.getTime() - shot:getShotTime() > 90
+        if rto_debug then
+            trigger.action.outText("RTO: HARM TOF " .. timer.getTime() - shot:getShotTime(),10,false)
+        end
+        return timer.getTime() - shot:getShotTime() < 90
     end
 
     function obj:getMinMach()
@@ -454,10 +457,10 @@ function Shot(weapon,misile)
     obj.time = timer.getTime()
 
     function obj:isExist()
-        if self.target:isExist() == false then
+        if self.target == nil then
             return false
         end
-        if self.target == nil then
+        if self.target:isExist() == false then
             return false
         end
         if self.misile:isExist(self) == false then
@@ -639,7 +642,7 @@ function RTO()
         end
 
         if rto_debug then
-            trigger.action.outText("RTO: Copy Shot" .. event.weapon:getTypeName(),10,false)
+            trigger.action.outText("RTO: Copy Shot " .. event.weapon:getTypeName(),10,false)
         end
         
         self.shot[#self.shot + 1] = Shot(event.weapon, misile)
