@@ -367,6 +367,8 @@ function AGM_AGM_88()
     obj.DR       = 15
     obj.STERNWEZ = 9
 
+    obj.timeout  = 90 
+
     obj.minMach  = 1
 
     function obj:valid(shot)
@@ -397,9 +399,11 @@ function AGM_AGM_88()
 
     function obj:isExist(shot)
         if rto_debug then
-            trigger.action.outText("RTO: HARM TOF " .. timer.getTime() - shot:getShotTime(),10,false)
+            if (timer.getTime() - shot:getShotTime()) % 10 < 1 then
+                trigger.action.outText("RTO: HARM TOF " .. string.format("%.0f",timer.getTime() - shot:getShotTime()),10,false)
+            end
         end
-        return timer.getTime() - shot:getShotTime() < 90
+        return (timer.getTime() - shot:getShotTime()) < (shot:shotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
     end
 
     function obj:getMinMach()
@@ -605,9 +609,11 @@ function Shot(weapon,misile)
         end
         if obj.misile:valid(self) == true then
             if rto_debug then
-                trigger.action.outText("RTO: Kill Confirmed " .. self.target:getTypeName() .. "  " .. self.targetAltitude/100 .. "K",10,false)
+                trigger.action.outText("RTO: Kill Confirmed " .. self.target:getTypeName() .. "  " .. string.format("%.0f",self.targetAltitude/1000) .. "K",10,false)
             end
             trigger.action.explosion(self.target:getPoint(), 100)
+        else
+            trigger.action.outText("RTO: Shot Trashed " .. self.target:getTypeName() .. "  " .. string.format("%.0f",self.targetAltitude/1000) .. "K",10,false)
         end
     end
 
