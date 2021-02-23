@@ -4,7 +4,7 @@ The RTO(Range Training Officer) judges if a fighter was shot down or successfull
 
 In real-life Air to Air Combat training, Fighter pilots don't shoot a real missile but they call they've "shot" missile to the target, and RTO will judge if the target could evade the missile from various parameters: shot range, altitude, speed, and target aspect angle at the time TIMEOUT(predicted missile hit time).
 
-DCS World is the most popular modern combat flight simulator, but there missiles guidance is too weak to replicate AFTTP based BVR, and its effective tactics often change every time they update and change missile flight model, guidance model, or beam/chaff resistance.
+DCS World is the most popular modern combat flight simulator, but there AA missiles guidance is too weak to replicate AFTTP based BVR, and its effective tactics often change every time they update and change missile flight model, guidance model, or beam/chaff resistance. Also HARM is too short ranged and too slow to replicate real life SEAD tactics like PETSHOT and REACTIVESHOT.
 
 Therefore, I decided to script the DCS world BVR to explode a fighter who did not evade the missile properly...even if the missile was defeated in the DCS 3D world.
 
@@ -26,19 +26,18 @@ You need to BEAM or be colder to the shooter at TIMEOUT(missile hit predicted ti
 - If shot longer than DR and inside RMAX: BEAM or colder to defeat
 - If shot longer than STERNWEZ and inside DR: DRAG to defeat
 - If shot within STERNWEZ: valid
+- RMAX/DR/STERNWEZ will increase or decrease by shot altitude and target altitude
+- AGM-88 has 90 seconds of estimated TOF at RMAX
 - If missile speed go below Mach 1.0: invalid
 - Explode the target if shot was valid.
 
-||AIM-120C|AIM-120B|SD-10|R-77|R-27ER|
-|-:|:-|:-|:-|:-|:-|
-|RMAX|62|58|54|42|39|
-|DR|27|25|23|19|15|
-|STERNWEZ|23|21|19|15|9|
+||AIM-120C|AIM-120B|SD-10|R-77|R-27ER|AGM-88|
+|-:|:-|:-|:-|:-|:-|:-|
+|RMAX|62|58|54|42|42|62|
+|DR|27|25|23|19|19|-|
+|STERNWEZ|23|21|19|15|13|-|
 
-at 35,000ft  
-+/- 2nm/10,000ft target altitude  
-+/- 2nm/10,000ft shot altitude
-
+at 35,000ft
 
 ## How to apply the script to your mission
 
@@ -55,8 +54,7 @@ Set 2 Trigger:
 - AIM-7
 (Should have more long range F-POLE)
 - AIM-54
-- AGM-88
-(Current DCS HARM is too short ranged and too slow to replicate real life SEAD tactics like PETSHOT and REACTIVESHOT)
+- MICA
 
 ## Tactics Manual
 
