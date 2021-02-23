@@ -1,9 +1,9 @@
 rto_debug = false
 
 local AspectAngle = {
-    Drag    = 65,
-    Beam    = 115,
-    Flank   = 155,
+    Drag    = 60,
+    Beam    = 110,
+    Flank   = 150,
     Hot     = 180
 };
 
@@ -454,6 +454,9 @@ function Shot(weapon,misile)
     obj.time = timer.getTime()
 
     function obj:isExist()
+        if self.target:isExist() == false then
+            return false
+        end
         if self.target == nil then
             return false
         end
@@ -471,7 +474,13 @@ function Shot(weapon,misile)
         if self.weapon == nil then
             return
         end
+        if self.weapon:isExist() == false then
+            return
+        end
         if self.target == nil then
+            return
+        end
+        if self.target:isExist() == false then
             return
         end
 
@@ -531,7 +540,10 @@ function Shot(weapon,misile)
 
     function obj:isMissileTrackingTgt()
         if self.weapon == nil then
-            return
+            return false
+        end
+        if self.weapon:isExist() == false then
+            return false
         end
         return self.weapon:getTarget() ~= nil
     end
@@ -540,10 +552,16 @@ function Shot(weapon,misile)
         if self.weapon == nil then
             return
         end
+        if self.weapon:isExist() == false then
+            return
+        end
         if self.weapon:getTarget() == nil then
             return
         end
-        b, t = self.weapon:getTarget():getRadar()
+        if self.weapon:getTarget():isExist() == false then
+            return
+        end
+        local b, t = self.weapon:getTarget():getRadar()
         return b
     end
 
@@ -577,6 +595,9 @@ function Shot(weapon,misile)
 
     function obj:valid()
         if self.target == nil then
+            return
+        end
+        if self.target:isExist() == false then
             return
         end
         if obj.misile:valid(self) == true then
@@ -629,6 +650,9 @@ function RTO()
             if track:isExist() == true then
                 self.shot[i]:update()
             else
+                if rto_debug then
+                    trigger.action.outText("RTO: Vanished ",10,false)
+                end
                 self.shot[i]:valid()
                 table.remove(self.shot, i)
             end
