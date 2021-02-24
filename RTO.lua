@@ -34,6 +34,10 @@ function AAM_NULL()
         return (alt - 35000) * 2 / 10000
     end
 
+    function obj:reactThreat(shot)
+        return
+    end
+
     return obj
 end
 
@@ -85,7 +89,7 @@ function AAM_AIM120C()
         return true
     end
 
-  74  function obj:isExist(shot)
+    function obj:isExist(shot)
         return shot:getMissileSpeedMach() > self.minMach
     end
 
@@ -95,6 +99,16 @@ function AAM_AIM120C()
 
     function obj:altitudeCoefficient(alt)
         return (alt - 35000) * 2 / 10000
+    end
+
+    function obj:reactThreat(shot)
+        local con = shot:getControllerOfTargetUnit()
+        local tof = (timer.getTime() - shot:getShotTime())
+        if tof < 80 then
+            con:setOption(AI.Option.Air.val.REACTION_ON_THREAT, AI.Option.Air.val.REACTION_ON_THREAT.BYPASS_AND_ESCAPE)
+        else
+            con:setOption(AI.Option.Air.val.REACTION_ON_THREAT, AI.Option.Air.val.REACTION_ON_THREAT.PASSIVE_DEFENCE)
+        end
     end
 
     return obj
@@ -160,6 +174,10 @@ function AAM_AIM120()
         return (alt - 35000) * 2 / 10000
     end
 
+    function obj:reactThreat(shot)
+        return
+    end
+
     return obj
 end
 
@@ -223,6 +241,10 @@ function AAM_SD_10()
         return (alt - 35000) * 2 / 10000
     end
 
+    function obj:reactThreat(shot)
+        return
+    end
+
     return obj
 end
 
@@ -284,6 +306,10 @@ function AAM_P_77()
 
     function obj:altitudeCoefficient(alt)
         return (alt - 35000) * 2 / 10000
+    end
+
+    function obj:reactThreat(shot)
+        return
     end
 
     return obj
@@ -355,6 +381,10 @@ function AAM_P_27PE()
         return (alt - 20000) * 3/ 10000
     end
 
+    function obj:reactThreat(shot)
+        return
+    end
+
     return obj
 end
 
@@ -368,6 +398,7 @@ function AGM_AGM_88()
     obj.STERNWEZ = 9
 
     obj.timeout  = 90 
+    obj.aiRdrPd  = math.random() * 30 - 15
 
     obj.minMach  = 1
 
@@ -403,7 +434,11 @@ function AGM_AGM_88()
                 trigger.action.outText("RTO: HARM TOF " .. string.format("%.0f",timer.getTime() - shot:getShotTime()),10,false)
             end
         end
-        return (timer.getTime() - shot:getShotTime()) < (shot:shotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
+
+        local tof  = (timer.getTime() - shot:getShotTime())
+        local tot  = (shot:shotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
+
+        return tof < tot
     end
 
     function obj:getMinMach()
@@ -412,6 +447,29 @@ function AGM_AGM_88()
 
     function obj:altitudeCoefficient(alt)
         return (alt - 35000) * 2 / 10000
+    end
+
+    function obj:reactThreat(shot)
+        local tof  = (timer.getTime() - shot:getShotTime())
+        local tot  = (shot:shotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
+
+        -- cease target radar
+        local con = shot:getControllerOfTargetGroup()
+        if tof < tot + self.aiRdrPd then
+            if con then
+                if rto_debug then
+                    trigger.action.outText("RTO: HARM CEASED RADAR",false)
+                end
+                con:setOption(AI.Option.Ground.id.ALARM_STATE, AI.Option.Ground.id.ALARM_STATE.GREEN)
+            end
+        else
+            if con then
+                if rto_debug then
+                    trigger.action.outText("RTO: RADAR ACTIVATED",false)
+                end
+                con:setOption(AI.Option.Ground.id.ALARM_STATE, AI.Option.Ground.id.ALARM_STATE.AUTO)
+            end
+        end
     end
 
     return obj
@@ -544,6 +602,30 @@ function Shot(weapon,misile)
 
         --trigger.action.outText("TA : " .. string.format("%.0f",self.targetAltitude) .. " AA : " .. string.format("%.0f",self.targetAspectAngle) .. " FD : " .. string.format("%.2f",self.missileFlewDistance) .. " MACH : " .. string.format("%.2f",self.missileSpeedMach),  1, true) 
     end
+    
+    function obj:reactThreat()
+        self:missile:reactThreat(self)
+    end
+
+    function obj:getControllerOfTargetGroup()
+        if self.target == nil then
+            return nil
+        end
+        if self.target:isExist() == false then
+            return nil
+        end
+        return self.target:getGroup():getController()
+    end
+
+    function obj:getControllerOfTargetUnit()
+        if self.target == nil then
+            return nil
+        end
+        if self.target:isExist() == false then
+            return nil
+        end
+        return self.target:getController()
+    end
 
     function obj:isMissileTrackingTgt()
         if self.weapon == nil then
@@ -658,6 +740,7 @@ function RTO()
         for i,track in pairs(self.shot) do
             if track:isExist() == true then
                 self.shot[i]:update()
+                --self.shot[i]:reactThreat()
             else
                 if rto_debug then
                     trigger.action.outText("RTO: Vanished ",10,false)
