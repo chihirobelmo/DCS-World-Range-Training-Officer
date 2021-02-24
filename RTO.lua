@@ -695,7 +695,9 @@ function Shot(weapon,misile)
             end
             trigger.action.explosion(self.target:getPoint(), 100)
         else
-            trigger.action.outText("RTO: Shot Trashed " .. self.target:getTypeName() .. "  " .. string.format("%.0f",self.targetAltitude/1000) .. "K",10,false)
+            if rto_debug then
+                trigger.action.outText("RTO: Shot Trashed " .. self.target:getTypeName() .. "  " .. string.format("%.0f",self.targetAltitude/1000) .. "K",10,false)
+            end
         end
     end
 
