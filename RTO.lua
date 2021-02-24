@@ -85,7 +85,7 @@ function AAM_AIM120C()
         return true
     end
 
-    function obj:isExist(shot)
+  74  function obj:isExist(shot)
         return shot:getMissileSpeedMach() > self.minMach
     end
 
@@ -166,11 +166,11 @@ end
 function AAM_SD_10()
     local obj = {}
 
-    obj.RMAX     = 60
-    obj.DOR      = 60
-    obj.MAR      = 60
-    obj.DR       = 60
-    obj.STERNWEZ = 60
+    obj.RMAX     = 54
+    obj.DOR      = 32
+    obj.MAR      = 27
+    obj.DR       = 23
+    obj.STERNWEZ = 19
 
     obj.minMach  = 0.1
 
