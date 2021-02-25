@@ -1,10 +1,11 @@
 rto_debug = true
 
 local AspectAngle = {
-    Drag    = 60,
-    Beam    = 110,
-    Flank   = 150,
-    Hot     = 180
+    QuickExit = 30,
+    Drag      = 60,
+    Beam      = 110,
+    Flank     = 150,
+    Hot       = 180
 };
 
 local feet_per_meter = 3.28084
@@ -12,11 +13,11 @@ local feet_per_nm    = 6000
 local ms_per_mach    = 343
 
 function ceaseSamRadar(con)
-    con:setOption(9, 1)
+    con:setOption(AI.Option.Ground.id.ALARM_STATE, AI.Option.Ground.val.ALARM_STATE.GREEN)
 end
 
 function activeSamRadar(con)
-    con:setOption(9, 0)
+    con:setOption(AI.Option.Ground.id.ALARM_STATE, AI.Option.Ground.val.ALARM_STATE.AUTO)
 end
 
 function AAM_NULL()
@@ -46,7 +47,7 @@ function AAM_NULL()
         return
     end
 
-    function obj:reactTrashed(shot)
+    function obj:quickExit(shot)
         return
     end
 
@@ -58,11 +59,12 @@ function AAM_AIM120C()
 
     obj.RMAX     = 62
     obj.DOR      = 36
-    obj.MAR      = 31
+    obj.MAR      = 32
     obj.DR       = 27
     obj.STERNWEZ = 23
 
     obj.minMach  = 1
+    obj.fQuickE  = false
 
     function obj:valid(shot)
         if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
@@ -82,6 +84,12 @@ function AAM_AIM120C()
                 trigger.action.outText("RTO: Shot Trashed (Out of RMAX)",10,false)
             end
             return false
+        end
+        if shot:shotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            if rto_debug then
+                trigger.action.outText("RTO: (Quick Exit)",10,false)
+            end
+            return self.fQuickE == false
         end
         if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             if rto_debug then
@@ -115,6 +123,12 @@ function AAM_AIM120C()
 
     function obj:reactThreat(shot)
         return
+    end
+
+    function obj:quickExit(shot)
+        if shot:getTargetAspectAngle() < AspectAngle.QuickExit then
+            self.fQuickE = true;
+        end
     end
 
     return obj
@@ -130,6 +144,7 @@ function AAM_AIM120()
     obj.STERNWEZ = 21
 
     obj.minMach  = 1
+    obj.fQuickE  = false
 
     function obj:valid(shot)
         if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
@@ -149,6 +164,12 @@ function AAM_AIM120()
                 trigger.action.outText("RTO: Shot Trashed (Out of RMAX)",10,false)
             end
             return false
+        end
+        if shot:shotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            if rto_debug then
+                trigger.action.outText("RTO: (Quick Exit)",10,false)
+            end
+            return self.fQuickE == false
         end
         if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             if rto_debug then
@@ -182,6 +203,12 @@ function AAM_AIM120()
 
     function obj:reactThreat(shot)
         return
+    end
+
+    function obj:quickExit(shot)
+        if shot:getTargetAspectAngle() < AspectAngle.QuickExit then
+            self.fQuickE = true;
+        end
     end
 
     return obj
@@ -197,6 +224,7 @@ function AAM_SD_10()
     obj.STERNWEZ = 19
 
     obj.minMach  = 0.1
+    obj.fQuickE  = false
 
     function obj:valid(shot)
         if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
@@ -216,6 +244,12 @@ function AAM_SD_10()
                 trigger.action.outText("RTO: Shot Trashed (Out of RMAX)",10,false)
             end
             return false
+        end
+        if shot:shotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            if rto_debug then
+                trigger.action.outText("RTO: (Quick Exit)",10,false)
+            end
+            return self.fQuickE == false
         end
         if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             if rto_debug then
@@ -249,6 +283,12 @@ function AAM_SD_10()
 
     function obj:reactThreat(shot)
         return
+    end
+
+    function obj:quickExit(shot)
+        if shot:getTargetAspectAngle() < AspectAngle.QuickExit then
+            self.fQuickE = true;
+        end
     end
 
     return obj
@@ -264,6 +304,7 @@ function AAM_P_77()
     obj.STERNWEZ = 15
 
     obj.minMach  = 1
+    obj.fQuickE  = false
 
     function obj:valid(shot)
         if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
@@ -283,6 +324,12 @@ function AAM_P_77()
                 trigger.action.outText("RTO: Shot Trashed (Out of RMAX)",10,false)
             end
             return false
+        end
+        if shot:shotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            if rto_debug then
+                trigger.action.outText("RTO: (Quick Exit)",10,false)
+            end
+            return self.fQuickE == false
         end
         if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             if rto_debug then
@@ -318,6 +365,12 @@ function AAM_P_77()
         return
     end
 
+    function obj:quickExit(shot)
+        if shot:getTargetAspectAngle() < AspectAngle.QuickExit then
+            self.fQuickE = true;
+        end
+    end
+
     return obj
 end
 
@@ -331,6 +384,7 @@ function AAM_P_27PE()
     obj.STERNWEZ = 9
 
     obj.minMach  = 1
+    obj.fQuickE  = false
 
     function obj:valid(shot)
         if shot:isMissileTrackingTgt() == false then
@@ -356,6 +410,12 @@ function AAM_P_27PE()
                 trigger.action.outText("RTO: Shot Trashed (Out of RMAX)",10,false)
             end
             return false
+        end
+        if shot:shotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            if rto_debug then
+                trigger.action.outText("RTO: (Quick Exit)",10,false)
+            end
+            return self.fQuickE == false
         end
         if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             if rto_debug then
@@ -389,6 +449,12 @@ function AAM_P_27PE()
 
     function obj:reactThreat(shot)
         return
+    end
+
+    function obj:quickExit(shot)
+        if shot:getTargetAspectAngle() < AspectAngle.QuickExit then
+            self.fQuickE = true;
+        end
     end
 
     return obj
@@ -458,8 +524,12 @@ function AGM_AGM_88()
     function obj:reactThreat(shot)
         local con = shot:getControllerOfTargetGroup()
         local tot = (shot:shotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
-        timer.scheduleFunction(ceaseSamRadar,  con, timer.getTime()       + math.random(30)     )
+        timer.scheduleFunction(ceaseSamRadar,  con, timer.getTime()       + math.random(14) + 16)
         timer.scheduleFunction(activeSamRadar, con, timer.getTime() + tot + math.random(30) - 15)
+    end
+
+    function obj:quickExit(shot)
+        return
     end
 
     return obj
@@ -589,6 +659,8 @@ function Shot(weapon,missile)
         }
 
         self.missileFlewDistance = math.sqrt(p.x^2 + p.y^2 + p.z^2) * feet_per_meter / feet_per_nm
+
+        self.missile:quickExit(self)
 
         --trigger.action.outText("TA : " .. string.format("%.0f",self.targetAltitude) .. " AA : " .. string.format("%.0f",self.targetAspectAngle) .. " FD : " .. string.format("%.2f",self.missileFlewDistance) .. " MACH : " .. string.format("%.2f",self.missileSpeedMach),  1, true) 
     end
