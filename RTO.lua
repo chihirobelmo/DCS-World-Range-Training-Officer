@@ -1,4 +1,4 @@
-rto_debug = true
+rto_debug = false
 
 local AspectAngle = {
     QuickExit = 30,
@@ -223,7 +223,7 @@ function AAM_SD_10()
     obj.DR       = 23
     obj.STERNWEZ = 19
 
-    obj.minMach  = 0.1
+    obj.minMach  = 1
     obj.fQuickE  = false
 
     function obj:valid(shot)
