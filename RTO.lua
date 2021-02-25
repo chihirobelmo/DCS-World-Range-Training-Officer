@@ -1,4 +1,4 @@
-rto_debug = false
+rto_debug = true
 
 local AspectAngle = {
     Drag    = 60,
@@ -10,6 +10,14 @@ local AspectAngle = {
 local feet_per_meter = 3.28084
 local feet_per_nm    = 6000
 local ms_per_mach    = 343
+
+function ceaseSamRadar(con)
+    con:setOption(9, 1)
+end
+
+function activeSamRadar(con)
+    con:setOption(9, 0)
+end
 
 function AAM_NULL()
     local obj = {}
@@ -35,6 +43,10 @@ function AAM_NULL()
     end
 
     function obj:reactThreat(shot)
+        return
+    end
+
+    function obj:reactTrashed(shot)
         return
     end
 
@@ -102,13 +114,7 @@ function AAM_AIM120C()
     end
 
     function obj:reactThreat(shot)
-        local con = shot:getControllerOfTargetUnit()
-        local tof = (timer.getTime() - shot:getShotTime())
-        if tof < 80 then
-            con:setOption(AI.Option.Air.val.REACTION_ON_THREAT, AI.Option.Air.val.REACTION_ON_THREAT.BYPASS_AND_ESCAPE)
-        else
-            con:setOption(AI.Option.Air.val.REACTION_ON_THREAT, AI.Option.Air.val.REACTION_ON_THREAT.PASSIVE_DEFENCE)
-        end
+        return
     end
 
     return obj
@@ -450,26 +456,10 @@ function AGM_AGM_88()
     end
 
     function obj:reactThreat(shot)
-        local tof  = (timer.getTime() - shot:getShotTime())
-        local tot  = (shot:shotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
-
-        -- cease target radar
         local con = shot:getControllerOfTargetGroup()
-        if tof < tot + self.aiRdrPd then
-            if con then
-                if rto_debug then
-                    trigger.action.outText("RTO: HARM CEASED RADAR",false)
-                end
-                con:setOption(AI.Option.Ground.id.ALARM_STATE, AI.Option.Ground.id.ALARM_STATE.GREEN)
-            end
-        else
-            if con then
-                if rto_debug then
-                    trigger.action.outText("RTO: RADAR ACTIVATED",false)
-                end
-                con:setOption(AI.Option.Ground.id.ALARM_STATE, AI.Option.Ground.id.ALARM_STATE.AUTO)
-            end
-        end
+        local tot = (shot:shotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
+        timer.scheduleFunction(ceaseSamRadar,  con, timer.getTime()       + math.random(30)     )
+        timer.scheduleFunction(activeSamRadar, con, timer.getTime() + tot + math.random(30) - 15)
     end
 
     return obj
@@ -494,14 +484,14 @@ function Missile(w)
     end
 end
 
-function Shot(weapon,misile)
+function Shot(weapon,missile)
     local obj = {}
 
     local l  = weapon:getLauncher():getPosition().p
     local t  = weapon:getTarget():getPosition().p
     local sr = math.sqrt((l.x-t.x)^2 + (l.y-t.y)^2 + (l.z-t.z)^2) * feet_per_meter / feet_per_nm
 
-    obj.misile = misile
+    obj.missile = missile
 
     obj.weapon       = weapon
     obj.target       = weapon:getTarget()
@@ -525,7 +515,7 @@ function Shot(weapon,misile)
         if self.target:isExist() == false then
             return false
         end
-        if self.misile:isExist(self) == false then
+        if self.missile:isExist(self) == false then
             return false
         end
         if self.weapon:isExist() then
@@ -560,7 +550,7 @@ function Shot(weapon,misile)
 
         -- check if missile rocket burst started
         if self.flagMissileBurst == false then
-            if self.missileSpeedMach > self.misile:getMinMach() then
+            if self.missileSpeedMach > self.missile:getMinMach() then
                 self.flagMissileBurst = true;
             end
         end
@@ -604,7 +594,7 @@ function Shot(weapon,misile)
     end
     
     function obj:reactThreat()
-        self:missile:reactThreat(self)
+        self.missile:reactThreat(self)
     end
 
     function obj:getControllerOfTargetGroup()
@@ -667,11 +657,11 @@ function Shot(weapon,misile)
     end
 
     function obj:getTgtAltFactorNm()
-        return self.misile:altitudeCoefficient(self.targetAltitude)
+        return self.missile:altitudeCoefficient(self.targetAltitude)
     end
 
     function obj:getShotAltFactorNm()
-        return self.misile:altitudeCoefficient(self.shotAltitude)
+        return self.missile:altitudeCoefficient(self.shotAltitude)
     end
 
     function obj:getMissileSpeedMach()
@@ -689,7 +679,7 @@ function Shot(weapon,misile)
         if self.target:isExist() == false then
             return
         end
-        if obj.misile:valid(self) == true then
+        if obj.missile:valid(self) == true then
             if rto_debug then
                 trigger.action.outText("RTO: Kill Confirmed " .. self.target:getTypeName() .. "  " .. string.format("%.0f",self.targetAltitude/1000) .. "K",10,false)
             end
@@ -723,11 +713,11 @@ function RTO()
             return
         end
 
-        local misile = Missile(event.weapon)
+        local missile = Missile(event.weapon)
 
         -- trigger.action.outText(event.weapon:getTypeName(),10,true)
 
-        if misile:hasCriteria() == false then
+        if missile:hasCriteria() == false then
             return
         end
 
@@ -735,14 +725,15 @@ function RTO()
             trigger.action.outText("RTO: Copy Shot " .. event.weapon:getTypeName(),10,false)
         end
         
-        self.shot[#self.shot + 1] = Shot(event.weapon, misile)
+        self.shot[#self.shot + 1] = Shot(event.weapon, missile)
+
+        self.shot[#self.shot]:reactThreat()
     end
     
     function obj:calc()
         for i,track in pairs(self.shot) do
             if track:isExist() == true then
                 self.shot[i]:update()
-                --self.shot[i]:reactThreat()
             else
                 if rto_debug then
                     trigger.action.outText("RTO: Vanished ",10,false)
@@ -759,7 +750,3 @@ end
 rto = RTO()
 
 world.addEventHandler(rto)
-
---for i = 1, 100 do
---    timer.scheduleFunction(rto.calc,  rto, timer.getTime() + 0.01 * i)
---end
