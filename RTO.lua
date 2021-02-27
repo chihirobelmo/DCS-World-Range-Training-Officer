@@ -89,7 +89,10 @@ function AAM_AIM120C()
             if rto_debug then
                 trigger.action.outText("RTO: (Quick Exit)",10,false)
             end
-            return self.fQuickE == false
+            if self.fQuickE then
+                return false
+            end
+            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
         if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             if rto_debug then
@@ -169,7 +172,10 @@ function AAM_AIM120()
             if rto_debug then
                 trigger.action.outText("RTO: (Quick Exit)",10,false)
             end
-            return self.fQuickE == false
+            if self.fQuickE then
+                return false
+            end
+            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
         if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             if rto_debug then
@@ -249,7 +255,10 @@ function AAM_SD_10()
             if rto_debug then
                 trigger.action.outText("RTO: (Quick Exit)",10,false)
             end
-            return self.fQuickE == false
+            if self.fQuickE then
+                return false
+            end
+            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
         if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             if rto_debug then
@@ -329,7 +338,10 @@ function AAM_P_77()
             if rto_debug then
                 trigger.action.outText("RTO: (Quick Exit)",10,false)
             end
-            return self.fQuickE == false
+            if self.fQuickE then
+                return false
+            end
+            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
         if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             if rto_debug then
@@ -415,7 +427,10 @@ function AAM_P_27PE()
             if rto_debug then
                 trigger.action.outText("RTO: (Quick Exit)",10,false)
             end
-            return self.fQuickE == false
+            if self.fQuickE then
+                return false
+            end
+            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
         if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             if rto_debug then
