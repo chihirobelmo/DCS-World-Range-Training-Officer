@@ -20,6 +20,14 @@ function activeSamRadar(con)
     con:setOption(AI.Option.Ground.id.ALARM_STATE, AI.Option.Ground.val.ALARM_STATE.AUTO)
 end
 
+function abortFighter(con)
+    con:setOption(AI.Option.Air.id.REACTION_ON_THREAT, AI.Option.Air.val.REACTION_ON_THREAT.BYPASS_AND_ESCAPE)
+end
+
+function commitFighter(con)
+    con:setOption(AI.Option.Air.id.REACTION_ON_THREAT, AI.Option.Air.val.REACTION_ON_THREAT.EVADE_FIRE)
+end
+
 function AAM_NULL()
     local obj = {}
 
@@ -63,6 +71,7 @@ function AAM_AIM120C()
     obj.DR       = 27
     obj.STERNWEZ = 23
 
+    obj.timeout  = 80 
     obj.minMach  = 1
     obj.fQuickE  = false
 
@@ -146,6 +155,7 @@ function AAM_AIM120()
     obj.DR       = 25
     obj.STERNWEZ = 21
 
+    obj.timeout  = 80 
     obj.minMach  = 1
     obj.fQuickE  = false
 
@@ -229,6 +239,7 @@ function AAM_SD_10()
     obj.DR       = 23
     obj.STERNWEZ = 19
 
+    obj.timeout  = 80 
     obj.minMach  = 1
     obj.fQuickE  = false
 
@@ -312,6 +323,7 @@ function AAM_P_77()
     obj.DR       = 19
     obj.STERNWEZ = 15
 
+    obj.timeout  = 80 
     obj.minMach  = 1
     obj.fQuickE  = false
 
@@ -395,6 +407,7 @@ function AAM_P_27PE()
     obj.DR       = 15
     obj.STERNWEZ = 9
 
+    obj.timeout  = 80 
     obj.minMach  = 1
     obj.fQuickE  = false
 
@@ -485,7 +498,6 @@ function AGM_AGM_88()
     obj.STERNWEZ = 9
 
     obj.timeout  = 90 
-    obj.aiRdrPd  = math.random() * 30 - 15
 
     obj.minMach  = 1
 
@@ -628,7 +640,7 @@ function Shot(weapon,missile)
         local vw = self.weapon:getVelocity()     -- velocity    weapon
         local pw = self.weapon:getPosition().p   -- position    weapon
         local pt = self.target:getPosition().p   -- position    target
-        local ot = self.target:getPosition().z   -- orientation target
+        local ot = self.target:getVelocity()     -- orientation target
 
         self.targetAltitude   = pt.y * feet_per_meter
         self.missileSpeedMach = math.sqrt(vw.x^2 + vw.y^2 + vw.z^2) / ms_per_mach;
@@ -649,12 +661,14 @@ function Shot(weapon,missile)
 
         self.targetToShotPosDistance = math.sqrt(p.x^2 + p.y^2 + p.z^2) * feet_per_meter / feet_per_nm
 
-        local rh =      (1 + (math.atan2(p.z,  p.x ) / math.pi)) * 180
-        local oh = 90 + (1 + (math.atan2(ot.z, ot.x) / math.pi)) * 180
+        local rh = (1 + (math.atan2(p.z,  p.x ) / math.pi)) * 180
+        local oh = ((math.atan2(ot.z, ot.x) / math.pi)) * 180
 
-        if oh >= 360 then
-            oh = oh - 360
+        if oh < 0 then
+            oh = oh + 360
         end
+
+        -- trigger.action.outText(oh, 1, true)
         
         local raa = 0
         
@@ -677,7 +691,7 @@ function Shot(weapon,missile)
 
         self.missile:quickExit(self)
 
-        --trigger.action.outText("TA : " .. string.format("%.0f",self.targetAltitude) .. " AA : " .. string.format("%.0f",self.targetAspectAngle) .. " FD : " .. string.format("%.2f",self.missileFlewDistance) .. " MACH : " .. string.format("%.2f",self.missileSpeedMach),  1, true) 
+        -- trigger.action.outText("TA : " .. string.format("%.0f",self.targetAltitude) .. " AA : " .. string.format("%.0f",self.targetAspectAngle) .. " FD : " .. string.format("%.2f",self.missileFlewDistance) .. " MACH : " .. string.format("%.2f",self.missileSpeedMach),  1, true) 
     end
     
     function obj:reactThreat()
@@ -837,3 +851,7 @@ end
 rto = RTO()
 
 world.addEventHandler(rto)
+
+-- for i = 1, 100 do
+--     timer.scheduleFunction(rto.calc,  rto, timer.getTime() + 0.01 * i)
+-- end
