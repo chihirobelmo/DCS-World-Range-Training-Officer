@@ -49,6 +49,20 @@ Set 2 Trigger:
 ![image](https://user-images.githubusercontent.com/32677587/108588342-028fc100-739c-11eb-91f5-9005a0f349cb.png)
 ![image](https://user-images.githubusercontent.com/32677587/108588374-2ce17e80-739c-11eb-9178-0698bc76e36c.png)
 
+## Log file save
+
+Log files will be saved to Saved Games\DCS.openbeta\Tracks
+You have to edit DCS World OpenBeta/Scripts/missionScripting.lua and coment out lines as follows:
+```Lua
+do
+-- sanitizeModule('os')
+-- sanitizeModule('io')
+-- sanitizeModule('lfs')
+    require = nil
+    loadlib = nil
+end
+```
+
 ## Future Update Plan
 
 - AIM-7
