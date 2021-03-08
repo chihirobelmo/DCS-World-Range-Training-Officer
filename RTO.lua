@@ -208,7 +208,7 @@ function AAM_AIM120C()
     function obj:hasEnergy(shot)
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 - 10 * t
-        return d > 343
+        return d > 343 * 0.5
     end
 
     function obj:altitudeCoefficient(alt)
@@ -340,7 +340,7 @@ function AAM_AIM120()
     function obj:hasEnergy(shot)
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 - 10 * t
-        return d > 343
+        return d > 343 * 0.5
     end
 
     function obj:altitudeCoefficient(alt)
@@ -472,7 +472,7 @@ function AAM_SD_10()
     function obj:hasEnergy(shot)
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 - 10 * t
-        return d > 343
+        return d > 343 * 0.5
     end
 
     function obj:altitudeCoefficient(alt)
@@ -604,7 +604,7 @@ function AAM_P_77()
     function obj:hasEnergy(shot)
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 - 10 * t
-        return d > 343
+        return d > 343 * 0.5
     end
 
     function obj:altitudeCoefficient(alt)
