@@ -172,7 +172,7 @@ function AAM_AIM120C()
         local d = 1029 * t - 10 * t * t / 2
         if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
             if self.guiding == true then
-                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),true)
+                Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",true)
                 self.husky = true
             end
         end
@@ -181,7 +181,12 @@ function AAM_AIM120C()
     function obj:isTimeout(shot)
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 * t - 10 * t * t / 2
-        return d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance()
+        if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
+            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",true)
+            return true
+        else
+            return false
+        end
     end
 
     function obj:hasCriteria()
@@ -307,7 +312,12 @@ function AAM_AIM120()
     function obj:isTimeout(shot)
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 * t - 10 * t * t / 2
-        return d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance()
+        if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
+            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",true)
+            return true
+        else
+            return false
+        end
     end
 
     function obj:hasCriteria()
@@ -433,7 +443,12 @@ function AAM_SD_10()
     function obj:isTimeout(shot)
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 * t - 10 * t * t / 2
-        return d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance()
+        if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
+            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",true)
+            return true
+        else
+            return false
+        end
     end
 
     function obj:hasCriteria()
@@ -559,7 +574,12 @@ function AAM_P_77()
     function obj:isTimeout(shot)
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 * t - 10 * t * t / 2
-        return d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance()
+        if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
+            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",true)
+            return true
+        else
+            return false
+        end
     end
 
     function obj:hasCriteria()
@@ -661,7 +681,12 @@ function AAM_P_27PE()
     function obj:isTimeout(shot)
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 * t - 10 * t * t / 2
-        return d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance()
+        if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
+            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",true)
+            return true
+        else
+            return false
+        end
     end
 
     function obj:hasCriteria()
@@ -726,7 +751,12 @@ function AGM_AGM_88()
         local tof  = (timer.getTime() - shot:getShotTime())
         local tot  = (shot:getShotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
 
-        return tof > tot
+        if tof > tot then
+            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut HARM",true)
+            return true
+        else
+            return false
+        end
     end
 
     function obj:checkGuidance(shot)
@@ -842,8 +872,6 @@ function Shot(id,weapon,missile)
         end
 
         local ps = self.shotPosition             -- position    shot
-        local vw = self.weapon:getVelocity()     -- velocity    weapon
-        local pw = self.weapon:getPosition().p   -- position    weapon
         local pt = self.target:getPosition().p   -- position    target
         local ot = self.target:getVelocity()     -- orientation target
 
