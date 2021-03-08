@@ -1,4 +1,23 @@
-rto_debug = false
+local rto_debug = true
+
+-- By default DCS has the io and lfs libraries removed from the scripting engine as a security precaution. 
+-- You can stop the game from doing this by modifying install/Scripts/missionScripting.lua. 
+-- Simply comment out the two lines running the sanitizeModule function on io and lfs.
+
+if io then
+    file = io.open(os.getenv("USERPROFILE") .. "\\Saved Games\\DCS.openbeta\\Tracks\\RTO-" .. os.date("%c"):gsub("/",""):gsub(" ","-"):gsub(":","") .. ".log", "w")
+end
+
+function Log(id,log)
+    if file then
+        file:write("TIME:" .. timer.getAbsTime() .. " SHOTID:" .. id .. " LOG:" .. log .. "\n")
+    end
+    if rto_debug then
+        trigger.action.outText(log,10,false)
+    end
+end
+
+id = 0
 
 local AspectAngle = {
     QuickExit = 30,
@@ -18,14 +37,6 @@ end
 
 function activeSamRadar(con)
     con:setOption(AI.Option.Ground.id.ALARM_STATE, AI.Option.Ground.val.ALARM_STATE.AUTO)
-end
-
-function abortFighter(con)
-    con:setOption(AI.Option.Air.id.REACTION_ON_THREAT, AI.Option.Air.val.REACTION_ON_THREAT.BYPASS_AND_ESCAPE)
-end
-
-function commitFighter(con)
-    con:setOption(AI.Option.Air.id.REACTION_ON_THREAT, AI.Option.Air.val.REACTION_ON_THREAT.EVADE_FIRE)
 end
 
 function AAM_NULL()
@@ -76,44 +87,51 @@ function AAM_AIM120C()
     obj.fQuickE  = false
 
     function obj:valid(shot)
-        if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: Vanished (Shot Within STERNWEZ)",10,false)
-            end
+        if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ")
             return true
         end
-        if shot:getMissileSpeedMach() < self.minMach                                                  then
-            if rto_debug then
-                trigger.action.outText("RTO: Shot Trashed (Missile Energy Lose)",10,false)
-            end
+        if shot:getMissileSpeedMach() < self.minMach then
+            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Missile Energy Lose)")
             return false
         end
-        if shot:shotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: Shot Trashed (Out of RMAX)",10,false)
-            end
+        if shot:getShotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Out of RMAX)")
             return false
         end
-        if shot:shotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Quick Exit)",10,false)
-            end
+        if shot:getShotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Inside RMAX Outside MAR")
             if self.fQuickE then
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Quick Exit)")
                 return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Beam
-        end
-        if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Out of DR)",10,false)
+            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)")
+                return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
-        if shot:shotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Within DR)",10,false)
+        if shot:getShotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Outside DR")
+            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)")
+                return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Drag
+        end
+        if shot:getShotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Inside DR")
+            if shot:getTargetAspectAngle() >= AspectAngle.Drag then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Drag)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)")
+                return false
+            end
         end
     end
 
@@ -160,44 +178,51 @@ function AAM_AIM120()
     obj.fQuickE  = false
 
     function obj:valid(shot)
-        if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: Vanished (Shot Within STERNWEZ)",10,false)
-            end
+        if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ")
             return true
         end
-        if shot:getMissileSpeedMach() < self.minMach                                                  then
-            if rto_debug then
-                trigger.action.outText("RTO: Shot Trashed (Missile Energy Lose)",10,false)
-            end
+        if shot:getMissileSpeedMach() < self.minMach then
+            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Missile Energy Lose)")
             return false
         end
-        if shot:shotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: Shot Trashed (Out of RMAX)",10,false)
-            end
+        if shot:getShotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Out of RMAX)")
             return false
         end
-        if shot:shotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Quick Exit)",10,false)
-            end
+        if shot:getShotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Inside RMAX Outside MAR")
             if self.fQuickE then
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Quick Exit)")
                 return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Beam
-        end
-        if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Out of DR)",10,false)
+            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)")
+                return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
-        if shot:shotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Within DR)",10,false)
+        if shot:getShotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Outside DR")
+            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)")
+                return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Drag
+        end
+        if shot:getShotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Inside DR")
+            if shot:getTargetAspectAngle() >= AspectAngle.Drag then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Drag)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)")
+                return false
+            end
         end
     end
 
@@ -244,44 +269,51 @@ function AAM_SD_10()
     obj.fQuickE  = false
 
     function obj:valid(shot)
-        if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: Vanished (Shot Within STERNWEZ)",10,false)
-            end
+        if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ")
             return true
         end
-        if shot:getMissileSpeedMach() < self.minMach                                                  then
-            if rto_debug then
-                trigger.action.outText("RTO: Shot Trashed (Missile Energy Lose)",10,false)
-            end
+        if shot:getMissileSpeedMach() < self.minMach then
+            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Missile Energy Lose)")
             return false
         end
-        if shot:shotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: Shot Trashed (Out of RMAX)",10,false)
-            end
+        if shot:getShotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Out of RMAX)")
             return false
         end
-        if shot:shotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Quick Exit)",10,false)
-            end
+        if shot:getShotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Inside RMAX Outside MAR")
             if self.fQuickE then
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Quick Exit)")
                 return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Beam
-        end
-        if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Out of DR)",10,false)
+            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)")
+                return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
-        if shot:shotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Within DR)",10,false)
+        if shot:getShotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Outside DR")
+            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)")
+                return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Drag
+        end
+        if shot:getShotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Inside DR")
+            if shot:getTargetAspectAngle() >= AspectAngle.Drag then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Drag)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)")
+                return false
+            end
         end
     end
 
@@ -328,44 +360,51 @@ function AAM_P_77()
     obj.fQuickE  = false
 
     function obj:valid(shot)
-        if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: Vanished (Shot Within STERNWEZ)",10,false)
-            end
+        if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ")
             return true
         end
-        if shot:getMissileSpeedMach() < self.minMach                                                  then
-            if rto_debug then
-                trigger.action.outText("RTO: Shot Trashed (Missile Energy Lose)",10,false)
-            end
+        if shot:getMissileSpeedMach() < self.minMach then
+            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Missile Energy Lose)")
             return false
         end
-        if shot:shotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: Shot Trashed (Out of RMAX)",10,false)
-            end
+        if shot:getShotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Out of RMAX)")
             return false
         end
-        if shot:shotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Quick Exit)",10,false)
-            end
+        if shot:getShotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Inside RMAX Outside MAR")
             if self.fQuickE then
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Quick Exit)")
                 return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Beam
-        end
-        if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Out of DR)",10,false)
+            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)")
+                return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
-        if shot:shotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Within DR)",10,false)
+        if shot:getShotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Outside DR")
+            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)")
+                return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Drag
+        end
+        if shot:getShotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Inside DR")
+            if shot:getTargetAspectAngle() >= AspectAngle.Drag then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Drag)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)")
+                return false
+            end
         end
     end
 
@@ -413,49 +452,54 @@ function AAM_P_27PE()
 
     function obj:valid(shot)
         if shot:isMissileTrackingTgt() == false then
-            if rto_debug then
-                trigger.action.outText("RTO: Vanished (Launcher ceased STT)",10,false)
-            end
+            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Ceased STT)")
             return false
         end
-        if shot:shotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: Vanished (Shot Within STERNWEZ)",10,false)
-            end
+        if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ")
             return true
         end
-        if shot:getMissileSpeedMach() < self.minMach                                                  then
-            if rto_debug then
-                trigger.action.outText("RTO: Shot Trashed (Missile Energy Lose)",10,false)
-            end
+        if shot:getMissileSpeedMach() < self.minMach then
+            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Missile Energy Lose)")
             return false
         end
-        if shot:shotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: Shot Trashed (Out of RMAX)",10,false)
-            end
+        if shot:getShotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Out of RMAX)")
             return false
         end
-        if shot:shotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Quick Exit)",10,false)
-            end
+        if shot:getShotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Inside RMAX Outside MAR")
             if self.fQuickE then
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Quick Exit)")
                 return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Beam
-        end
-        if shot:shotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Out of DR)",10,false)
+            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)")
+                return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Beam
         end
-        if shot:shotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: (Within DR)",10,false)
+        if shot:getShotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Outside DR")
+            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)")
+                return false
             end
-            return shot:getTargetAspectAngle() >= AspectAngle.Drag
+        end
+        if shot:getShotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Val: Shot Inside DR")
+            if shot:getTargetAspectAngle() >= AspectAngle.Drag then
+                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Drag)")
+                return true
+            else
+                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)")
+                return false
+            end
         end
     end
 
@@ -503,21 +547,15 @@ function AGM_AGM_88()
 
     function obj:valid(shot)
         if shot:isMissileTrackingTgt() == false then
-            if rto_debug then
-                trigger.action.outText("RTO: Vanished (HARM lost target)",10,false)
-            end
+            Log(shot:getID(), "RTO: Shot Cal: Shot Trashed (HARM lost target)")
             return false
         end
         if shot:isTargetRadarActive() == false then
-            if rto_debug then
-                trigger.action.outText("RTO: Vanished (Target ceased radar emission)",10,false)
-            end
+            Log(shot:getID(), "RTO: Shot Cal: Shot Trashed (Target ceasing radar emission)")
             return false
         end
-        if shot:shotRangeNm() > self.RMAX + shot:getShotAltFactorNm() then
-            if rto_debug then
-                trigger.action.outText("RTO: Shot Trashed (Out of RMAX)",10,false)
-            end
+        if shot:getShotRangeNm() > self.RMAX + shot:getShotAltFactorNm() then
+            Log(shot:getID(), "RTO: Shot Cal: Shot Trashed (Out of RMAX)")
             return false
         end
         return true
@@ -528,14 +566,12 @@ function AGM_AGM_88()
     end
 
     function obj:isExist(shot)
-        if rto_debug then
-            if (timer.getTime() - shot:getShotTime()) % 10 < 1 then
-                trigger.action.outText("RTO: HARM TOF " .. string.format("%.0f",timer.getTime() - shot:getShotTime()),10,false)
-            end
+        if (timer.getTime() - shot:getShotTime()) % 10 < 1 then
+            Log(shot:getID(), "RTO: HARM TOF " .. string.format("%.0f",timer.getTime() - shot:getShotTime()))
         end
 
         local tof  = (timer.getTime() - shot:getShotTime())
-        local tot  = (shot:shotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
+        local tot  = (shot:getShotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
 
         return tof < tot
     end
@@ -550,7 +586,7 @@ function AGM_AGM_88()
 
     function obj:reactThreat(shot)
         local con = shot:getControllerOfTargetGroup()
-        local tot = (shot:shotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
+        local tot = (shot:getShotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
         timer.scheduleFunction(ceaseSamRadar,  con, timer.getTime()       + math.random(14) + 16)
         timer.scheduleFunction(activeSamRadar, con, timer.getTime() + tot + math.random(30) - 15)
     end
@@ -581,18 +617,20 @@ function Missile(w)
     end
 end
 
-function Shot(weapon,missile)
+function Shot(id,weapon,missile)
     local obj = {}
 
     local l  = weapon:getLauncher():getPosition().p
     local t  = weapon:getTarget():getPosition().p
     local sr = math.sqrt((l.x-t.x)^2 + (l.y-t.y)^2 + (l.z-t.z)^2) * feet_per_meter / feet_per_nm
 
+    obj.id      = id
     obj.missile = missile
 
-    obj.weapon       = weapon
-    obj.target       = weapon:getTarget()
-    obj.shotPosition = weapon:getPosition().p
+    obj.weapon         = weapon
+    obj.target         = weapon:getTarget()
+    obj.targetCallsign = weapon:getTarget():getCallsign()
+    obj.shotPosition   = weapon:getPosition().p
 
     obj.targetAspectAngle       = 180                   -- shot position to target aspect angle
     obj.missileFlewDistance     = 0;                    -- missile flew distance
@@ -616,7 +654,12 @@ function Shot(weapon,missile)
             return false
         end
         if self.weapon:isExist() then
-            return self.targetToShotPosDistance >= self.missileFlewDistance
+            if self.targetToShotPosDistance >= self.missileFlewDistance then
+                return true
+            else
+                Log(self.id, "RTO: TimeOut " .. self.targetCallsign)
+                return false
+            end
         else
             return false
         end
@@ -745,6 +788,10 @@ function Shot(weapon,missile)
         return b
     end
 
+    function obj:getID()
+        return self.id
+    end
+
     function obj:getShotTime()
         return self.time
     end
@@ -753,7 +800,7 @@ function Shot(weapon,missile)
         return self.targetAspectAngle
     end
 
-    function obj:shotRangeNm()
+    function obj:getShotRangeNm()
         return self.shotRange
     end
 
@@ -781,14 +828,10 @@ function Shot(weapon,missile)
             return
         end
         if obj.missile:valid(self) == true then
-            if rto_debug then
-                trigger.action.outText("RTO: Kill Confirmed " .. self.target:getTypeName() .. "  " .. string.format("%.0f",self.targetAltitude/1000) .. "K",10,false)
-            end
+            Log(self.id, "RTO: Kill Confirmed " .. self.targetCallsign .. " " .. string.format("%.0f",self.targetAltitude/1000) .. "K")
             trigger.action.explosion(self.target:getPoint(), 100)
         else
-            if rto_debug then
-                trigger.action.outText("RTO: Shot Trashed " .. self.target:getTypeName() .. "  " .. string.format("%.0f",self.targetAltitude/1000) .. "K",10,false)
-            end
+            Log(self.id, "RTO: Shot Trashed " .. self.targetCallsign .. " " .. string.format("%.0f",self.targetAltitude/1000) .. "K" )
         end
     end
 
@@ -822,11 +865,11 @@ function RTO()
             return
         end
 
-        if rto_debug then
-            trigger.action.outText("RTO: Copy Shot " .. event.weapon:getTypeName(),10,false)
-        end
+        id = id + 1
+
+        Log(id, "RTO: Copy Shot " .. event.weapon:getTypeName())
         
-        self.shot[#self.shot + 1] = Shot(event.weapon, missile)
+        self.shot[#self.shot + 1] = Shot(id, event.weapon, missile)
 
         self.shot[#self.shot]:reactThreat()
     end
@@ -836,9 +879,6 @@ function RTO()
             if track:isExist() == true then
                 self.shot[i]:update()
             else
-                if rto_debug then
-                    trigger.action.outText("RTO: Vanished ",10,false)
-                end
                 self.shot[i]:valid()
                 table.remove(self.shot, i)
             end
