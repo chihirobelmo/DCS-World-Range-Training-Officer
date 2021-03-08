@@ -1,4 +1,4 @@
-local rto_debug = true
+local rto_debug = false
 
 -- By default DCS has the io and lfs libraries removed from the scripting engine as a security precaution. 
 -- You can stop the game from doing this by modifying install/Scripts/missionScripting.lua. 
@@ -13,10 +13,10 @@ function Log(id,log,bool)
         file:write("TIME:" .. timer.getAbsTime() .. " SHOTID:" .. id .. " LOG:" .. log .. "\n")
     end
     if rto_debug then
-        trigger.action.outText(log,10,false)
+        trigger.action.outText("SHOTID:" .. id .. " LOG:" .. log,10,false)
     else
         if bool then
-            trigger.action.outText(log,10,false)
+            trigger.action.outText("SHOTID:" .. id .. " LOG:" .. log,10,false)
         end
     end
 end
@@ -47,6 +47,14 @@ function AAM_NULL()
     local obj = {}
 
     function obj:valid(shot)
+        return false
+    end
+
+    function obj:checkGuidance(shot)
+        return
+    end
+
+    function obj:isHusky(shot)
         return false
     end
 
@@ -88,8 +96,14 @@ function AAM_AIM120C()
 
     obj.timeout  = 80
     obj.fQuickE  = false
+    obj.guiding  = true
+    obj.husky    = false
 
     function obj:valid(shot)
+        if self.husky == false then
+            Log(shot:getID(), "RTO: Shot Val: Ceased guidance before Husky",false)
+            return false
+        end
         if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ",false)
             return true
@@ -130,6 +144,36 @@ function AAM_AIM120C()
             else
                 Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)",false)
                 return false
+            end
+        end
+    end
+
+    function obj:checkGuidance(shot)
+        if self.guiding == false then
+            return
+        end
+        if self.husky == true then
+            return
+        end
+        if shot:isMissileTrackingTgt() == false then
+            Log(shot:getID(), "RTO: Guidance Stop",false)
+            self.guiding = false
+        end
+    end
+
+    function obj:isHusky(shot)
+        if self.guiding == false then
+            return
+        end
+        if self.husky == true then
+            return
+        end
+        local t = timer.getTime() - shot:getShotTime()
+        local d = 1029 * t - 10 * t * t / 2
+        if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
+            if self.guiding == true then
+                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),true)
+                self.husky = true
             end
         end
     end
@@ -178,8 +222,14 @@ function AAM_AIM120()
 
     obj.timeout  = 80 
     obj.fQuickE  = false
+    obj.guiding  = true
+    obj.husky    = false
 
     function obj:valid(shot)
+        if self.husky == false then
+            Log(shot:getID(), "RTO: Shot Val: Ceased guidance before Husky",false)
+            return false
+        end
         if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ",false)
             return true
@@ -220,6 +270,36 @@ function AAM_AIM120()
             else
                 Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)",false)
                 return false
+            end
+        end
+    end
+
+    function obj:checkGuidance(shot)
+        if self.guiding == false then
+            return
+        end
+        if self.husky == true then
+            return
+        end
+        if shot:isMissileTrackingTgt() == false then
+            Log(shot:getID(), "RTO: Guidance Stop",false)
+            self.guiding = false
+        end
+    end
+
+    function obj:isHusky(shot)
+        if self.guiding == false then
+            return
+        end
+        if self.husky == true then
+            return
+        end
+        local t = timer.getTime() - shot:getShotTime()
+        local d = 1029 * t - 10 * t * t / 2
+        if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
+            if self.guiding == true then
+                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),true)
+                self.husky = true
             end
         end
     end
@@ -268,8 +348,14 @@ function AAM_SD_10()
 
     obj.timeout  = 80 
     obj.fQuickE  = false
+    obj.guiding  = true
+    obj.husky    = false
 
     function obj:valid(shot)
+        if self.husky == false then
+            Log(shot:getID(), "RTO: Shot Val: Ceased guidance before Husky",false)
+            return false
+        end
         if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ",false)
             return true
@@ -310,6 +396,36 @@ function AAM_SD_10()
             else
                 Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)",false)
                 return false
+            end
+        end
+    end
+
+    function obj:checkGuidance(shot)
+        if self.guiding == false then
+            return
+        end
+        if self.husky == true then
+            return
+        end
+        if shot:isMissileTrackingTgt() == false then
+            Log(shot:getID(), "RTO: Guidance Stop",false)
+            self.guiding = false
+        end
+    end
+
+    function obj:isHusky(shot)
+        if self.guiding == false then
+            return
+        end
+        if self.husky == true then
+            return
+        end
+        local t = timer.getTime() - shot:getShotTime()
+        local d = 1029 * t - 10 * t * t / 2
+        if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
+            if self.guiding == true then
+                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),true)
+                self.husky = true
             end
         end
     end
@@ -358,8 +474,14 @@ function AAM_P_77()
 
     obj.timeout  = 80 
     obj.fQuickE  = false
+    obj.guiding  = true
+    obj.husky    = false
 
     function obj:valid(shot)
+        if self.husky == false then
+            Log(shot:getID(), "RTO: Shot Val: Ceased guidance before Husky",false)
+            return false
+        end
         if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
             Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ",false)
             return true
@@ -400,6 +522,36 @@ function AAM_P_77()
             else
                 Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)",false)
                 return false
+            end
+        end
+    end
+
+    function obj:checkGuidance(shot)
+        if self.guiding == false then
+            return
+        end
+        if self.husky == true then
+            return
+        end
+        if shot:isMissileTrackingTgt() == false then
+            Log(shot:getID(), "RTO: Guidance Stop",false)
+            self.guiding = false
+        end
+    end
+
+    function obj:isHusky(shot)
+        if self.guiding == false then
+            return
+        end
+        if self.husky == true then
+            return
+        end
+        local t = timer.getTime() - shot:getShotTime()
+        local d = 1029 * t - 10 * t * t / 2
+        if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
+            if self.guiding == true then
+                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),true)
+                self.husky = true
             end
         end
     end
@@ -498,6 +650,14 @@ function AAM_P_27PE()
         end
     end
 
+    function obj:checkGuidance(shot)
+        return
+    end
+
+    function obj:isHusky(shot)
+        return false
+    end
+
     function obj:isTimeout(shot)
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 * t - 10 * t * t / 2
@@ -569,6 +729,14 @@ function AGM_AGM_88()
         return tof > tot
     end
 
+    function obj:checkGuidance(shot)
+        return
+    end
+
+    function obj:isHusky(shot)
+        return false
+    end
+
     function obj:hasCriteria()
         return true
     end
@@ -596,7 +764,6 @@ function AGM_AGM_88()
 end
 
 function Missile(w)
-    -- trigger.action.outText(w:getTypeName(), 10, true)
     if     w:getTypeName() == "AIM_120C" then
         return AAM_AIM120C()
     elseif w:getTypeName() == "AIM_120"  then
@@ -620,10 +787,12 @@ function Shot(id,weapon,missile)
     obj.id      = id
     obj.missile = missile
 
-    obj.weapon         = weapon
-    obj.target         = weapon:getTarget()
-    obj.targetCallsign = weapon:getTarget():getCallsign()
-    obj.shotPosition   = weapon:getPosition().p
+    obj.weapon           = weapon
+    obj.launcher         = weapon:getLauncher()
+    obj.launcherCallsign = weapon:getLauncher():getCallsign()
+    obj.target           = weapon:getTarget()
+    obj.targetCallsign   = weapon:getTarget():getCallsign()
+    obj.shotPosition     = weapon:getPosition().p
 
     obj.targetAspectAngle       = 180                   -- shot position to target aspect angle
     obj.targetAltitude          = 35000;                -- target altitude
@@ -640,16 +809,19 @@ function Shot(id,weapon,missile)
 
     function obj:isTimeout()
         if self.target == nil then
+            Log(self.id, "RTO: Trashed " .. self.targetCallsign .. " Target does not exist (nil)",false)
             return false, false
         end
         if self.target:isExist() == false then
+            Log(self.id, "RTO: Trashed " .. self.targetCallsign .. " Target does not exist",false)
             return false, false
         end
         if self.missile:hasEnergy(self) == false then
+            Log(self.id, "RTO: TimeOut " .. self.targetCallsign .. " Missile has no Energy",false)
             return false, false
         end
         if self.missile:isTimeout(self) then
-            Log(self.id, "RTO: TimeOut " .. self.targetCallsign,false)
+            Log(self.id, "RTO: TimeOut " .. self.targetCallsign,true)
             return true, false
         end
         return false, true
@@ -705,7 +877,19 @@ function Shot(id,weapon,missile)
 
         self.missile:quickExit(self)
 
+        self.missile:checkGuidance(self)
+
+        self.missile:isHusky(self)
+
         -- trigger.action.outText("TA : " .. string.format("%.0f",self.targetAltitude) .. " AA : " .. string.format("%.0f",self.targetAspectAngle),  1, true) 
+    end
+
+    function obj:getTargetCallsign()
+        return self.targetCallsign
+    end
+
+    function obj:getLauncherCallsign()
+        return self.launcherCallsign
     end
 
     function obj:getTargetToShotPosDistance()
