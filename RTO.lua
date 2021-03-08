@@ -5,18 +5,21 @@ local rto_debug = false
 -- Simply comment out the two lines running the sanitizeModule function on io and lfs.
 
 if io then
-    file = io.open(os.getenv("USERPROFILE") .. "\\Saved Games\\DCS.openbeta\\Tracks\\RTO-" .. os.date("%c"):gsub("/",""):gsub(" ","-"):gsub(":","") .. ".log", "w")
+    file = io.open(os.getenv("USERPROFILE") .. "\\Saved Games\\DCS.openbeta\\Tracks\\RTO-" .. os.date("%c"):gsub("/",""):gsub(" ","-"):gsub(":","") .. ".csv", "w")
+    if file then
+        file:write("TIME" .. ",SHOTID" .. ",LOG" .. "\n")
+    end
 end
 
 function Log(id,log,bool)
     if file then
-        file:write("TIME:" .. timer.getAbsTime() .. " SHOTID:" .. id .. " LOG:" .. log .. "\n")
+        file:write(timer.getAbsTime() .. "," .. id .. "," .. log .. "\n")
     end
     if rto_debug then
-        trigger.action.outText("SHOTID:" .. id .. " LOG:" .. log,10,false)
+        trigger.action.outText("ID:" .. id .. ", LOG: " .. log,10,false)
     else
         if bool then
-            trigger.action.outText("SHOTID:" .. id .. " LOG:" .. log,10,false)
+            trigger.action.outText("ID:" .. id .. ", LOG: " .. log,10,false)
         end
     end
 end
@@ -839,19 +842,19 @@ function Shot(id,weapon,missile)
 
     function obj:isTimeout()
         if self.target == nil then
-            Log(self.id, "RTO: Trashed " .. self.targetCallsign .. " Target does not exist (nil)",false)
+            Log(self.id, "RTO: Trashed Target:" .. self.targetCallsign .. " (Target is nil)",false)
             return false, false
         end
         if self.target:isExist() == false then
-            Log(self.id, "RTO: Trashed " .. self.targetCallsign .. " Target does not exist",false)
+            Log(self.id, "RTO: Trashed Target:" .. self.targetCallsign .. " (Target does not exist)",false)
             return false, false
         end
         if self.missile:hasEnergy(self) == false then
-            Log(self.id, "RTO: TimeOut " .. self.targetCallsign .. " Missile has no Energy",false)
+            Log(self.id, "RTO: TimeOut Target:" .. self.targetCallsign .. " (Missile has no Energy)",false)
             return false, false
         end
         if self.missile:isTimeout(self) then
-            Log(self.id, "RTO: TimeOut " .. self.targetCallsign,true)
+            Log(self.id, "RTO: TimeOut Target:" .. self.targetCallsign,true)
             return true, false
         end
         return false, true
