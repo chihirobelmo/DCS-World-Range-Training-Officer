@@ -11,15 +11,23 @@ if io then
     end
 end
 
-function Log(id,log,bool)
+function Log(id,log,coalition)
     if file then
         file:write(timer.getAbsTime() .. "," .. id .. "," .. log .. "\n")
     end
     if rto_debug then
         trigger.action.outText("ID:" .. id .. ", LOG: " .. log,10,false)
     else
-        if bool then
-            trigger.action.outText("ID:" .. id .. ", LOG: " .. log,10,false)
+        if coalition then
+            if coalition == 0 then
+                trigger.action.outTextForCoalition(0,"ID:" .. id .. ", LOG: " .. log,10,false)
+            elseif coalition == 1 then
+                trigger.action.outTextForCoalition(1,"ID:" .. id .. ", LOG: " .. log,10,false)
+            elseif coalition == 2 then
+                trigger.action.outTextForCoalition(2,"ID:" .. id .. ", LOG: " .. log,10,false)
+            else
+                return
+            end
         end
     end
 end
@@ -175,7 +183,7 @@ function AAM_AIM120C()
         local d = 1029 * t - 10 * t * t / 2
         if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
             if self.guiding == true then
-                Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",true)
+                Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",shot:getLauncherCoalition())
                 self.husky = true
             end
         end
@@ -185,7 +193,7 @@ function AAM_AIM120C()
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 * t - 10 * t * t / 2
         if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
-            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",true)
+            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
             return true
         else
             return false
@@ -306,7 +314,7 @@ function AAM_AIM120()
         local d = 1029 * t - 10 * t * t / 2
         if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
             if self.guiding == true then
-                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),true)
+                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),shot:getLauncherCoalition())
                 self.husky = true
             end
         end
@@ -316,7 +324,7 @@ function AAM_AIM120()
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 * t - 10 * t * t / 2
         if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
-            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",true)
+            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
             return true
         else
             return false
@@ -437,7 +445,7 @@ function AAM_SD_10()
         local d = 1029 * t - 10 * t * t / 2
         if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
             if self.guiding == true then
-                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),true)
+                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),shot:getLauncherCoalition())
                 self.husky = true
             end
         end
@@ -447,7 +455,7 @@ function AAM_SD_10()
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 * t - 10 * t * t / 2
         if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
-            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",true)
+            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
             return true
         else
             return false
@@ -568,7 +576,7 @@ function AAM_P_77()
         local d = 1029 * t - 10 * t * t / 2
         if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
             if self.guiding == true then
-                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),true)
+                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),shot:getLauncherCoalition())
                 self.husky = true
             end
         end
@@ -578,7 +586,7 @@ function AAM_P_77()
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 * t - 10 * t * t / 2
         if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
-            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",true)
+            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
             return true
         else
             return false
@@ -685,7 +693,7 @@ function AAM_P_27PE()
         local t = timer.getTime() - shot:getShotTime()
         local d = 1029 * t - 10 * t * t / 2
         if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
-            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",true)
+            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
             return true
         else
             return false
@@ -755,7 +763,7 @@ function AGM_AGM_88()
         local tot  = (shot:getShotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
 
         if tof > tot then
-            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut HARM",true)
+            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut HARM",shot:getLauncherCoalition())
             return true
         else
             return false
@@ -820,12 +828,16 @@ function Shot(id,weapon,missile)
     obj.id      = id
     obj.missile = missile
 
-    obj.weapon           = weapon
-    obj.launcher         = weapon:getLauncher()
-    obj.launcherCallsign = weapon:getLauncher():getCallsign()
-    obj.target           = weapon:getTarget()
-    obj.targetCallsign   = weapon:getTarget():getCallsign()
-    obj.shotPosition     = weapon:getPosition().p
+    obj.weapon            = weapon
+    obj.launcher          = weapon:getLauncher()
+    obj.launcherCallsign  = weapon:getLauncher():getCallsign()
+    obj.launcherCoalition = weapon:getLauncher():getCoalition()
+    obj.target            = weapon:getTarget()
+    obj.targetCallsign    = weapon:getTarget():getCallsign()
+    obj.targetCoalition   = weapon:getTarget():getCoalition()
+    obj.shotPosition      = weapon:getPosition().p
+
+    obj.isTargetAi = obj.launcher:getPlayerName() == nil
 
     obj.targetAspectAngle       = 180                   -- shot position to target aspect angle
     obj.targetAltitude          = 35000;                -- target altitude
@@ -915,8 +927,16 @@ function Shot(id,weapon,missile)
         -- trigger.action.outText("TA : " .. string.format("%.0f",self.targetAltitude) .. " AA : " .. string.format("%.0f",self.targetAspectAngle),  1, true) 
     end
 
+    function obj:getTargetCoalition()
+        return self.targetCoalition
+    end
+
     function obj:getTargetCallsign()
         return self.targetCallsign
+    end
+
+    function obj:getLauncherCoalition()
+        return self.launcherCoalition
     end
 
     function obj:getLauncherCallsign()
@@ -1010,8 +1030,10 @@ function Shot(id,weapon,missile)
             return
         end
         if obj.missile:valid(self) == true then
-            Log(self.id, "RTO: Kill Confirmed " .. self.targetCallsign .. " " .. string.format("%.0f",self.targetAltitude/1000) .. "K",false)
-            trigger.action.explosion(self.target:getPoint(), 100)
+            Log(self.id, "RTO: Kill Confirmed " .. self.targetCallsign .. " " .. string.format("%.0f",self.targetAltitude/1000) .. "K",self.targetCoalition)
+            if self.isTargetAi then
+                trigger.action.explosion(self.target:getPoint(), 100)
+            end
         else
             Log(self.id, "RTO: Shot Trashed " .. self.targetCallsign .. " " .. string.format("%.0f",self.targetAltitude/1000) .. "K" ,false)
         end
