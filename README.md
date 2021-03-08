@@ -20,16 +20,19 @@ You need to BEAM or be colder to the shooter at TIMEOUT(missile hit predicted ti
 
 ## Logic
 
-- Calcurate missile shot distance every seconds.
-- If missile flow distance is longer than distance between missile shot position and the target, judge valid shot
+- Calculate missile shot distance every seconds.
+- If missile flow distance is longer than distance between missile shot position and the target, judge if the shot was valid or not.
 - If shot longer than RMAX: shot invalid
 - If shot longer than DR and inside RMAX: BEAM or colder to defeat
 - If shot longer than STERNWEZ and inside DR: DRAG to defeat
 - If shot within STERNWEZ: valid
-- RMAX/DR/STERNWEZ will increase or decrease by shot altitude and target altitude
+- RMAX/DR/STERNWEZ range will increase/decrease by shot altitude and target altitude
 - AGM-88 has 90 seconds of estimated TOF at RMAX
+- SAMs will cease radar when shot by an AGM-88, then turn on the radar again after predicted HARM TOT.
 - If missile speed go below Mach 1.0: invalid
-- Explode the target if shot was valid.
+- Explode the AI target if shot was valid.
+- Husky and Timeout message will be shown to the launcher coalition.
+- Kill received message will be shown to the target coalition if shot was valid.
 
 ||AIM-120C|AIM-120B|SD-10|R-77|R-27ER|AGM-88|
 |-:|:-|:-|:-|:-|:-|:-|
@@ -51,8 +54,8 @@ Set 2 Trigger:
 
 ## Log file save
 
-Log files will be saved to Saved Games\DCS.openbeta\Tracks
-You have to edit DCS World OpenBeta/Scripts/missionScripting.lua and coment out lines as follows:
+Log files will be saved to Saved Games\DCS.openbeta\Tracks  
+You have to edit DCS World OpenBeta/Scripts/missionScripting.lua and comment out lines as follows:
 ```Lua
 do
 -- sanitizeModule('os')
