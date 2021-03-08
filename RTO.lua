@@ -180,7 +180,8 @@ function AAM_AIM120C()
             return
         end
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 * t - 10 * t * t / 2
+        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
+        local d = m * t - 10 * t * t / 2
         if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
             if self.guiding == true then
                 Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",shot:getLauncherCoalition())
@@ -192,7 +193,8 @@ function AAM_AIM120C()
 
     function obj:isTimeout(shot)
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 * t - 10 * t * t / 2
+        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
+        local d = m * t - 10 * t * t / 2
         if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
             Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
             return true
@@ -201,14 +203,15 @@ function AAM_AIM120C()
         end
     end
 
-    function obj:hasCriteria()
-        return true
-    end
-
     function obj:hasEnergy(shot)
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 - 10 * t
+        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
+        local d = m - 10 * t
         return d > 343 * 0.5
+    end
+
+    function obj:hasCriteria()
+        return true
     end
 
     function obj:altitudeCoefficient(alt)
@@ -312,10 +315,11 @@ function AAM_AIM120()
             return
         end
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 * t - 10 * t * t / 2
+        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
+        local d = m * t - 10 * t * t / 2
         if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
             if self.guiding == true then
-                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),shot:getLauncherCoalition())
+                Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",shot:getLauncherCoalition())
                 self.husky = true
                 shot:destroy()
             end
@@ -324,7 +328,8 @@ function AAM_AIM120()
 
     function obj:isTimeout(shot)
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 * t - 10 * t * t / 2
+        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
+        local d = m * t - 10 * t * t / 2
         if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
             Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
             return true
@@ -333,14 +338,15 @@ function AAM_AIM120()
         end
     end
 
-    function obj:hasCriteria()
-        return true
-    end
-
     function obj:hasEnergy(shot)
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 - 10 * t
+        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
+        local d = m - 10 * t
         return d > 343 * 0.5
+    end
+
+    function obj:hasCriteria()
+        return true
     end
 
     function obj:altitudeCoefficient(alt)
@@ -444,10 +450,11 @@ function AAM_SD_10()
             return
         end
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 * t - 10 * t * t / 2
+        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
+        local d = m * t - 10 * t * t / 2
         if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
             if self.guiding == true then
-                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),shot:getLauncherCoalition())
+                Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",shot:getLauncherCoalition())
                 self.husky = true
                 shot:destroy()
             end
@@ -456,7 +463,8 @@ function AAM_SD_10()
 
     function obj:isTimeout(shot)
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 * t - 10 * t * t / 2
+        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
+        local d = m * t - 10 * t * t / 2
         if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
             Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
             return true
@@ -465,14 +473,15 @@ function AAM_SD_10()
         end
     end
 
-    function obj:hasCriteria()
-        return true
-    end
-
     function obj:hasEnergy(shot)
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 - 10 * t
+        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
+        local d = m - 10 * t
         return d > 343 * 0.5
+    end
+
+    function obj:hasCriteria()
+        return true
     end
 
     function obj:altitudeCoefficient(alt)
@@ -576,10 +585,11 @@ function AAM_P_77()
             return
         end
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 * t - 10 * t * t / 2
+        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
+        local d = m * t - 10 * t * t / 2
         if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
             if self.guiding == true then
-                Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),shot:getLauncherCoalition())
+                Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",shot:getLauncherCoalition())
                 self.husky = true
                 shot:destroy()
             end
@@ -588,7 +598,8 @@ function AAM_P_77()
 
     function obj:isTimeout(shot)
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 * t - 10 * t * t / 2
+        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
+        local d = m * t - 10 * t * t / 2
         if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
             Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
             return true
@@ -597,14 +608,15 @@ function AAM_P_77()
         end
     end
 
-    function obj:hasCriteria()
-        return true
-    end
-
     function obj:hasEnergy(shot)
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 - 10 * t
+        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
+        local d = m - 10 * t
         return d > 343 * 0.5
+    end
+
+    function obj:hasCriteria()
+        return true
     end
 
     function obj:altitudeCoefficient(alt)
@@ -695,7 +707,8 @@ function AAM_P_27PE()
 
     function obj:isTimeout(shot)
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 * t - 10 * t * t / 2
+        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
+        local d = m * t - 10 * t * t / 2
         if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
             Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
             return true
@@ -704,14 +717,15 @@ function AAM_P_27PE()
         end
     end
 
-    function obj:hasCriteria()
-        return true
-    end
-
     function obj:hasEnergy(shot)
         local t = timer.getTime() - shot:getShotTime()
-        local d = 1029 - 10 * t
-        return d > 343
+        local m = 686 + 343 * shot:getTgtAltFactorNm() / 3
+        local d = m - 10 * t
+        return d > 343 * 0.5
+    end
+
+    function obj:hasCriteria()
+        return true
     end
 
     function obj:altitudeCoefficient(alt)
