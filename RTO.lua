@@ -5,7 +5,7 @@ local rto_debug = true
 -- Simply comment out the two lines running the sanitizeModule function on io and lfs.
 
 if io then
-    local file = io.open(os.getenv("USERPROFILE") .. "\\Saved Games\\DCS.openbeta\\Tracks\\RTO-" .. os.date("%c"):gsub("/",""):gsub(" ","-"):gsub(":","") .. ".log", "w")
+    file = io.open(os.getenv("USERPROFILE") .. "\\Saved Games\\DCS.openbeta\\Tracks\\RTO-" .. os.date("%c"):gsub("/",""):gsub(" ","-"):gsub(":","") .. ".log", "w")
 end
 
 function Log(id,log,bool)
