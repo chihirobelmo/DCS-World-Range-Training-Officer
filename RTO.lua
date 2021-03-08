@@ -185,6 +185,7 @@ function AAM_AIM120C()
             if self.guiding == true then
                 Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",shot:getLauncherCoalition())
                 self.husky = true
+                shot:destroy()
             end
         end
     end
@@ -316,6 +317,7 @@ function AAM_AIM120()
             if self.guiding == true then
                 Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),shot:getLauncherCoalition())
                 self.husky = true
+                shot:destroy()
             end
         end
     end
@@ -447,6 +449,7 @@ function AAM_SD_10()
             if self.guiding == true then
                 Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),shot:getLauncherCoalition())
                 self.husky = true
+                shot:destroy()
             end
         end
     end
@@ -578,6 +581,7 @@ function AAM_P_77()
             if self.guiding == true then
                 Log(shot:getID(), "RTO: Husky " .. shot:getLauncherCallsign(),shot:getLauncherCoalition())
                 self.husky = true
+                shot:destroy()
             end
         end
     end
@@ -837,7 +841,7 @@ function Shot(id,weapon,missile)
     obj.targetCoalition   = weapon:getTarget():getCoalition()
     obj.shotPosition      = weapon:getPosition().p
 
-    obj.isTargetAi = obj.launcher:getPlayerName() == nil
+    obj.isTargetAi = obj.target:getPlayerName() == nil
 
     obj.targetAspectAngle       = 180                   -- shot position to target aspect angle
     obj.targetAltitude          = 35000;                -- target altitude
@@ -925,6 +929,16 @@ function Shot(id,weapon,missile)
         self.missile:isHusky(self)
 
         -- trigger.action.outText("TA : " .. string.format("%.0f",self.targetAltitude) .. " AA : " .. string.format("%.0f",self.targetAspectAngle),  1, true) 
+    end
+
+    function obj:destroy()
+        if self.weapon == nil then
+            return false
+        end
+        if self.weapon:isExist() == false then
+            return false
+        end
+        self.weapon:destroy()
     end
 
     function obj:getTargetCoalition()
@@ -1031,7 +1045,7 @@ function Shot(id,weapon,missile)
         end
         if obj.missile:valid(self) == true then
             Log(self.id, "RTO: Kill Confirmed " .. self.targetCallsign .. " " .. string.format("%.0f",self.targetAltitude/1000) .. "K",self.targetCoalition)
-            if self.isTargetAi then
+            if self.isTargetAi == true then
                 trigger.action.explosion(self.target:getPoint(), 100)
             end
         else
