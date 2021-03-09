@@ -19,15 +19,7 @@ function Log(id,log,coalition)
         trigger.action.outText("ID:" .. id .. ", LOG: " .. log,10,false)
     else
         if coalition then
-            if coalition == 0 then
-                trigger.action.outTextForCoalition(0,"ID:" .. id .. ", LOG: " .. log,10,false)
-            elseif coalition == 1 then
-                trigger.action.outTextForCoalition(1,"ID:" .. id .. ", LOG: " .. log,10,false)
-            elseif coalition == 2 then
-                trigger.action.outTextForCoalition(2,"ID:" .. id .. ", LOG: " .. log,10,false)
-            else
-                return
-            end
+            trigger.action.outTextForCoalition(coalition,"ID:" .. id .. ", LOG: " .. log,10,false)
         end
     end
 end
@@ -60,14 +52,14 @@ function AAM_ARH()
     obj.guiding  = true
     obj.husky    = false
 
-    obj.topSpeed    = 1543
-    obj.speedReduce = 10
-    obj.huskyRange  = 20
-    obj.altMach     = 2
+    obj.topSpeed    = 343 * 4.5 -- at 35000ft
+    obj.speedReduce = -10       -- m/s
+    obj.huskyRange  = 20        -- nm
+    obj.boostTime   = 5         -- sec
 
     function obj:valid(shot)
         if self.husky == false then
-            Log(shot:getID(), "RTO: Shot Val: Ceased guidance before Husky",false)
+            Log(shot:getID(), "RTO: Ceased guidance before Husky",false)
             return false
         end
         return true
@@ -75,10 +67,18 @@ function AAM_ARH()
 
     function obj:getEnergy(shot)
         local t = timer.getTime() - shot:getShotTime()
-        local m = self.topSpeed + 343 * shot:getShotAltFactorNm()
-        local d = m * t - self.speedReduce * t * t / 2
-        local s = m - self.speedReduce * t
-        return s, d
+        local d = 0
+        local v = 0
+        local v0 = self.topSpeed + 343 * shot:getShotAltFactorNm() * 0.5 + 343 * shot:getTgtAltFactorNm() * 0.5
+        local bd = v0/self.boostTime * self.boostTime * self.boostTime / 2
+        if t < self.boostTime then
+            d  = v0/self.boostTime * t * t / 2
+            v  = v0/self.boostTime * t
+        else
+            d  = bd + v0 * (t - self.boostTime) + self.speedReduce * (t - self.boostTime) * (t - self.boostTime) / 2
+            v  = v0 + self.speedReduce * (t - self.boostTime)
+        end
+        return v, d
     end
 
     function obj:checkGuidance(shot)
@@ -101,22 +101,22 @@ function AAM_ARH()
         if self.husky == true then
             return
         end
-        local s, d = self:getEnergy(shot)
-        if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
+        local v, d = self:getEnergy(shot)
+        if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < self.huskyRange then
             if self.guiding == true then
                 Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",shot:getLauncherCoalition())
                 Log(shot:getID(), "RTO: " .. shot:getTargetCallsign() .. " Spiked",shot:getTargetCoalition())
                 self.husky = true
-                shot:destroy()
             end
         end
     end
 
     function obj:isTimeout(shot)
-        local s, d = self:getEnergy(shot)
+        local v, d = self:getEnergy(shot)
         if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
             Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
             Log(shot:getID(), "RTO: " .. shot:getTargetCallsign() .. " Naked",shot:getTargetCoalition())
+            shot:destroy()
             return true
         else
             return false
@@ -124,8 +124,12 @@ function AAM_ARH()
     end
 
     function obj:hasEnergy(shot)
-        local s, d = self:getEnergy(shot)
-        if s > 343 * 0.9 then
+        local t = timer.getTime() - shot:getShotTime()
+        if t < self.boostTime then
+            return true
+        end
+        local v, d = self:getEnergy(shot)
+        if v > 343 * 0.9 then
             return true
         else
             Log(shot:getID(), "RTO: " .. shot:getTargetCallsign() .. " Naked",shot:getTargetCoalition())
@@ -138,7 +142,7 @@ function AAM_ARH()
     end
 
     function obj:altitudeCoefficient(alt)
-        return (alt - 35000) / 10000
+        return (alt - 20000) / 25000
     end
 
     function obj:reactThreat(shot)
@@ -151,9 +155,10 @@ end
 function AAM_AIM120C()
     local obj = AAM_ARH()
 
-    obj.topSpeed    = 1543
-    obj.speedReduce = 10
-    obj.huskyRange  = 20
+    obj.topSpeed    = 343 * 3
+    obj.speedReduce = -10
+    obj.huskyRange  = 8
+    obj.boostTime   = 5
 
     return obj
 end
@@ -161,9 +166,10 @@ end
 function AAM_AIM120()
     local obj = AAM_ARH()
 
-    obj.topSpeed    = 1372
-    obj.speedReduce = 10
-    obj.huskyRange  = 20
+    obj.topSpeed    = 343 * 2.85
+    obj.speedReduce = -10
+    obj.huskyRange  = 8
+    obj.boostTime   = 5
     
     return obj
 end
@@ -171,9 +177,10 @@ end
 function AAM_SD_10()
     local obj = AAM_ARH()
 
-    obj.topSpeed    = 1200
-    obj.speedReduce = 10
-    obj.huskyRange  = 20
+    obj.topSpeed    = 343 * 2.5
+    obj.speedReduce = -10
+    obj.huskyRange  = 8
+    obj.boostTime   = 5
     
     return obj
 end
@@ -181,9 +188,10 @@ end
 function AAM_P_77()
     local obj = AAM_ARH()
 
-    obj.topSpeed    = 1029
-    obj.speedReduce = 10
-    obj.huskyRange  = 20
+    obj.topSpeed    = 343 * 3 * 1.25
+    obj.speedReduce = -10 * 1.25
+    obj.huskyRange  = 8
+    obj.boostTime   = 5
     
     return obj
 end
@@ -191,13 +199,14 @@ end
 function AAM_P_27PE()
     local obj = AAM_ARH()
 
-    obj.topSpeed    = 1029
-    obj.speedReduce = 10
-    obj.huskyRange  = 20
+    obj.topSpeed    = 343 * 3 * 1.25
+    obj.speedReduce = -10
+    obj.huskyRange  = 8
+    obj.boostTime   = 5
 
     function obj:valid(shot)
         if shot:isMissileTrackingTgt() == false then
-            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Ceased STT)",false)
+            Log(shot:getID(), "RTO: Shot Trashed (Ceased STT)",false)
             return false
         end
     end
@@ -221,20 +230,17 @@ function AGM_AGM_88()
 
     function obj:valid(shot)
         if shot:isTargetRadarActive() == false then
-            Log(shot:getID(), "RTO: Shot Cal: Shot Trashed (Target ceasing radar emission)",false)
+            Log(shot:getID(), "RTO: Shot Trashed (Target ceasing radar emission)",false)
             return false
         end
         if shot:getShotRangeNm() > self.RMAX + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Cal: Shot Trashed (Out of RMAX)",false)
+            Log(shot:getID(), "RTO: Shot Trashed (Out of RMAX)",false)
             return false
         end
         return true
     end
 
     function obj:isTimeout(shot)
-        if (timer.getTime() - shot:getShotTime()) % 10 < 1 then
-            Log(shot:getID(), "RTO: HARM TOF " .. string.format("%.0f",timer.getTime() - shot:getShotTime()),false)
-        end
 
         local tof  = (timer.getTime() - shot:getShotTime())
         local tot  = (shot:getShotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
@@ -294,18 +300,30 @@ function Shot(id,weapon,missile)
     obj.missile = missile
 
     obj.weapon            = weapon
+
     obj.launcher          = weapon:getLauncher()
     obj.launcherCallsign  = weapon:getLauncher():getCallsign()
     obj.launcherCoalition = weapon:getLauncher():getCoalition()
+
     obj.target            = weapon:getTarget()
     obj.targetCallsign    = weapon:getTarget():getCallsign()
     obj.targetCoalition   = weapon:getTarget():getCoalition()
+
     obj.shotPosition      = weapon:getPosition().p
 
-    obj.isTargetAi = obj.target:getPlayerName() == nil
+    obj.isTargetAi        = obj.target:getPlayerName() == nil
 
-    obj.targetAltitude          = 35000;                -- target altitude
-    obj.targetToShotPosDistance = 99999;                -- target to shot position distance
+    obj.targetAltitude    = weapon:getTarget():getPosition().p.y * feet_per_meter ;         -- target altitude
+
+    local ps = obj.shotPosition             -- position    shot
+    local pt = obj.target:getPosition().p   -- position    target
+    local p = {
+        x = ps.x - pt.x,
+        y = ps.y - pt.y,
+        z = ps.z - pt.z
+    }
+
+    obj.targetToShotPosDistance = math.sqrt(p.x^2 + p.y^2 + p.z^2) * feet_per_meter / feet_per_nm -- target to shot position distance
 
     local l  = weapon:getLauncher():getPosition().p
     local t  = weapon:getTarget():getPosition().p
@@ -314,23 +332,23 @@ function Shot(id,weapon,missile)
     obj.shotAltitude = l.y * feet_per_meter                                                                -- shot altitude
     obj.time         = timer.getTime()                                                                     -- shot time
     
-    Log(obj.id, "RTO: Copy Shot " .. obj.weapon:getTypeName() .. " to " .. obj.targetCallsign,false)
+    Log(obj.id, "RTO: " .. obj.launcherCallsign .. " at " .. string.format("%d", obj.shotAltitude/1000) .. "K Copy Shot " .. obj.weapon:getTypeName() .. " to " .. obj.targetCallsign .. " from " .. string.format("%d", obj.shotRange) .. "NM",false)
 
     function obj:isTimeout()
         if self.target == nil then
-            Log(self.id, "RTO: Trashed Target:" .. self.targetCallsign .. " (Target is nil)",false)
+            Log(self.id, "RTO: Trashed Target: " .. self.targetCallsign .. " (Target is nil)",false)
             return false, false
         end
         if self.target:isExist() == false then
-            Log(self.id, "RTO: Trashed Target:" .. self.targetCallsign .. " (Target does not exist)",false)
+            Log(self.id, "RTO: Trashed Target: " .. self.targetCallsign .. " (Target does not exist)",false)
             return false, false
         end
         if self.missile:hasEnergy(self) == false then
-            Log(self.id, "RTO: TimeOut Target:" .. self.targetCallsign .. " (Missile has no Energy)",false)
+            Log(self.id, "RTO: Trashed Target: " .. self.targetCallsign .. " at " .. string.format("%d", self.targetAltitude/1000) .. "K at " .. string.format("%d", self.targetToShotPosDistance) .. "NM from shotPosition " .. " (Missile has no Energy)",false)
             return false, false
         end
         if self.missile:isTimeout(self) then
-            Log(self.id, "RTO: TimeOut Target:" .. self.targetCallsign,true)
+            Log(self.id, "RTO: Valid Shot Target: " .. self.targetCallsign .. " at " .. string.format("%d", self.targetAltitude/1000) .. "K at " .. string.format("%d", self.targetToShotPosDistance) .. "NM from shotPosition ",false)
             return true, false
         end
         return false, true
@@ -350,13 +368,11 @@ function Shot(id,weapon,missile)
             return
         end
 
-        local ps = self.shotPosition             -- position    shot
-        local pt = self.target:getPosition().p   -- position    target
-        local ot = self.target:getVelocity()     -- orientation target
+        local ps = self.shotPosition
+        local pt = self.target:getPosition().p
 
         self.targetAltitude   = pt.y * feet_per_meter
 
-        -- aspect angle from shot position to the target
         local p = {
             x = ps.x - pt.x,
             y = ps.y - pt.y,
@@ -502,8 +518,6 @@ function RTO()
         end
 
         local missile = Missile(event.weapon)
-
-        -- trigger.action.outText(event.weapon:getTypeName(),10,true)
 
         if missile:hasCriteria() == false then
             return
