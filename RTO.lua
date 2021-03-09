@@ -32,16 +32,6 @@ function Log(id,log,coalition)
     end
 end
 
-id = 0
-
-local AspectAngle = {
-    QuickExit = 30,
-    Drag      = 60,
-    Beam      = 110,
-    Flank     = 150,
-    Hot       = 180
-};
-
 local feet_per_meter = 3.28084
 local feet_per_nm    = 6000
 local ms_per_mach    = 343
@@ -57,39 +47,101 @@ end
 function AAM_NULL()
     local obj = {}
 
-    function obj:valid(shot)
-        return false
-    end
-
-    function obj:checkGuidance(shot)
-        return
-    end
-
-    function obj:isHusky(shot)
-        return false
-    end
-
-    function obj:isTimeout(shot)
-        return false
-    end
-
     function obj:hasCriteria()
         return false
     end
 
+    return obj
+end
+
+function AAM_ARH()
+    local obj = {}
+
+    obj.guiding  = true
+    obj.husky    = false
+
+    obj.topSpeed    = 1543
+    obj.speedReduce = 10
+    obj.huskyRange  = 20
+    obj.altMach     = 2
+
+    function obj:valid(shot)
+        if self.husky == false then
+            Log(shot:getID(), "RTO: Shot Val: Ceased guidance before Husky",false)
+            return false
+        end
+        return true
+    end
+
+    function obj:getEnergy(shot)
+        local t = timer.getTime() - shot:getShotTime()
+        local m = self.topSpeed + 343 * shot:getShotAltFactorNm()
+        local d = m * t - self.speedReduce * t * t / 2
+        local s = m - self.speedReduce * t
+        return s, d
+    end
+
+    function obj:checkGuidance(shot)
+        if self.guiding == false then
+            return
+        end
+        if self.husky == true then
+            return
+        end
+        if shot:isMissileTrackingTgt() == false then
+            Log(shot:getID(), "RTO: Guidance Stop",false)
+            self.guiding = false
+        end
+    end
+
+    function obj:isHusky(shot)
+        if self.guiding == false then
+            return
+        end
+        if self.husky == true then
+            return
+        end
+        local s, d = self:getEnergy(shot)
+        if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
+            if self.guiding == true then
+                Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",shot:getLauncherCoalition())
+                Log(shot:getID(), "RTO: " .. shot:getTargetCallsign() .. " Spiked",shot:getTargetCoalition())
+                self.husky = true
+                shot:destroy()
+            end
+        end
+    end
+
+    function obj:isTimeout(shot)
+        local s, d = self:getEnergy(shot)
+        if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
+            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
+            Log(shot:getID(), "RTO: " .. shot:getTargetCallsign() .. " Naked",shot:getTargetCoalition())
+            return true
+        else
+            return false
+        end
+    end
+
     function obj:hasEnergy(shot)
-        return false
+        local s, d = self:getEnergy(shot)
+        if s > 343 * 0.9 then
+            return true
+        else
+            Log(shot:getID(), "RTO: " .. shot:getTargetCallsign() .. " Naked",shot:getTargetCoalition())
+            return false
+        end
+    end
+
+    function obj:hasCriteria()
+        return true
     end
 
     function obj:altitudeCoefficient(alt)
-        return (alt - 35000) * 2 / 10000
+        return (alt - 35000) / 10000
     end
 
     function obj:reactThreat(shot)
-        return
-    end
-
-    function obj:quickExit(shot)
         return
     end
 
@@ -97,603 +149,56 @@ function AAM_NULL()
 end
 
 function AAM_AIM120C()
-    local obj = {}
+    local obj = AAM_ARH()
 
-    obj.RMAX     = 62
-    obj.DOR      = 36
-    obj.MAR      = 32
-    obj.DR       = 27
-    obj.STERNWEZ = 23
-
-    obj.timeout  = 80
-    obj.fQuickE  = false
-    obj.guiding  = true
-    obj.husky    = false
-
-    function obj:valid(shot)
-        if self.husky == false then
-            Log(shot:getID(), "RTO: Shot Val: Ceased guidance before Husky",false)
-            return false
-        end
-        if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ",false)
-            return true
-        end
-        if shot:getShotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Out of RMAX)",false)
-            return false
-        end
-        if shot:getShotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Inside RMAX Outside MAR",false)
-            if self.fQuickE then
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Quick Exit)",false)
-                return false
-            end
-            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)",false)
-                return false
-            end
-        end
-        if shot:getShotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Outside DR",false)
-            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)",false)
-                return false
-            end
-        end
-        if shot:getShotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Inside DR",false)
-            if shot:getTargetAspectAngle() >= AspectAngle.Drag then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Drag)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)",false)
-                return false
-            end
-        end
-    end
-
-    function obj:checkGuidance(shot)
-        if self.guiding == false then
-            return
-        end
-        if self.husky == true then
-            return
-        end
-        if shot:isMissileTrackingTgt() == false then
-            Log(shot:getID(), "RTO: Guidance Stop",false)
-            self.guiding = false
-        end
-    end
-
-    function obj:isHusky(shot)
-        if self.guiding == false then
-            return
-        end
-        if self.husky == true then
-            return
-        end
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
-        local d = m * t - 10 * t * t / 2
-        if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
-            if self.guiding == true then
-                Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",shot:getLauncherCoalition())
-                self.husky = true
-                shot:destroy()
-            end
-        end
-    end
-
-    function obj:isTimeout(shot)
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
-        local d = m * t - 10 * t * t / 2
-        if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
-            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
-            return true
-        else
-            return false
-        end
-    end
-
-    function obj:hasEnergy(shot)
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
-        local d = m - 10 * t
-        return d > 343 * 0.5
-    end
-
-    function obj:hasCriteria()
-        return true
-    end
-
-    function obj:altitudeCoefficient(alt)
-        return (alt - 35000) * 2 / 10000
-    end
-
-    function obj:reactThreat(shot)
-        return
-    end
-
-    function obj:quickExit(shot)
-        if shot:getTargetAspectAngle() < AspectAngle.QuickExit then
-            self.fQuickE = true;
-        end
-    end
+    obj.topSpeed    = 1543
+    obj.speedReduce = 10
+    obj.huskyRange  = 20
 
     return obj
 end
 
 function AAM_AIM120()
-    local obj = {}
+    local obj = AAM_ARH()
 
-    obj.RMAX     = 58
-    obj.DOR      = 34
-    obj.MAR      = 29
-    obj.DR       = 25
-    obj.STERNWEZ = 21
-
-    obj.timeout  = 80 
-    obj.fQuickE  = false
-    obj.guiding  = true
-    obj.husky    = false
-
-    function obj:valid(shot)
-        if self.husky == false then
-            Log(shot:getID(), "RTO: Shot Val: Ceased guidance before Husky",false)
-            return false
-        end
-        if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ",false)
-            return true
-        end
-        if shot:getShotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Out of RMAX)",false)
-            return false
-        end
-        if shot:getShotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Inside RMAX Outside MAR",false)
-            if self.fQuickE then
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Quick Exit)",false)
-                return false
-            end
-            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)",false)
-                return false
-            end
-        end
-        if shot:getShotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Outside DR",false)
-            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)",false)
-                return false
-            end
-        end
-        if shot:getShotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Inside DR",false)
-            if shot:getTargetAspectAngle() >= AspectAngle.Drag then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Drag)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)",false)
-                return false
-            end
-        end
-    end
-
-    function obj:checkGuidance(shot)
-        if self.guiding == false then
-            return
-        end
-        if self.husky == true then
-            return
-        end
-        if shot:isMissileTrackingTgt() == false then
-            Log(shot:getID(), "RTO: Guidance Stop",false)
-            self.guiding = false
-        end
-    end
-
-    function obj:isHusky(shot)
-        if self.guiding == false then
-            return
-        end
-        if self.husky == true then
-            return
-        end
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
-        local d = m * t - 10 * t * t / 2
-        if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
-            if self.guiding == true then
-                Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",shot:getLauncherCoalition())
-                self.husky = true
-                shot:destroy()
-            end
-        end
-    end
-
-    function obj:isTimeout(shot)
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
-        local d = m * t - 10 * t * t / 2
-        if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
-            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
-            return true
-        else
-            return false
-        end
-    end
-
-    function obj:hasEnergy(shot)
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
-        local d = m - 10 * t
-        return d > 343 * 0.5
-    end
-
-    function obj:hasCriteria()
-        return true
-    end
-
-    function obj:altitudeCoefficient(alt)
-        return (alt - 35000) * 2 / 10000
-    end
-
-    function obj:reactThreat(shot)
-        return
-    end
-
-    function obj:quickExit(shot)
-        if shot:getTargetAspectAngle() < AspectAngle.QuickExit then
-            self.fQuickE = true;
-        end
-    end
-
+    obj.topSpeed    = 1372
+    obj.speedReduce = 10
+    obj.huskyRange  = 20
+    
     return obj
 end
 
 function AAM_SD_10()
-    local obj = {}
+    local obj = AAM_ARH()
 
-    obj.RMAX     = 54
-    obj.DOR      = 32
-    obj.MAR      = 27
-    obj.DR       = 23
-    obj.STERNWEZ = 19
-
-    obj.timeout  = 80 
-    obj.fQuickE  = false
-    obj.guiding  = true
-    obj.husky    = false
-
-    function obj:valid(shot)
-        if self.husky == false then
-            Log(shot:getID(), "RTO: Shot Val: Ceased guidance before Husky",false)
-            return false
-        end
-        if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ",false)
-            return true
-        end
-        if shot:getShotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Out of RMAX)",false)
-            return false
-        end
-        if shot:getShotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Inside RMAX Outside MAR",false)
-            if self.fQuickE then
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Quick Exit)",false)
-                return false
-            end
-            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)",false)
-                return false
-            end
-        end
-        if shot:getShotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Outside DR",false)
-            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)",false)
-                return false
-            end
-        end
-        if shot:getShotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Inside DR",false)
-            if shot:getTargetAspectAngle() >= AspectAngle.Drag then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Drag)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)",false)
-                return false
-            end
-        end
-    end
-
-    function obj:checkGuidance(shot)
-        if self.guiding == false then
-            return
-        end
-        if self.husky == true then
-            return
-        end
-        if shot:isMissileTrackingTgt() == false then
-            Log(shot:getID(), "RTO: Guidance Stop",false)
-            self.guiding = false
-        end
-    end
-
-    function obj:isHusky(shot)
-        if self.guiding == false then
-            return
-        end
-        if self.husky == true then
-            return
-        end
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
-        local d = m * t - 10 * t * t / 2
-        if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
-            if self.guiding == true then
-                Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",shot:getLauncherCoalition())
-                self.husky = true
-                shot:destroy()
-            end
-        end
-    end
-
-    function obj:isTimeout(shot)
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
-        local d = m * t - 10 * t * t / 2
-        if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
-            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
-            return true
-        else
-            return false
-        end
-    end
-
-    function obj:hasEnergy(shot)
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
-        local d = m - 10 * t
-        return d > 343 * 0.5
-    end
-
-    function obj:hasCriteria()
-        return true
-    end
-
-    function obj:altitudeCoefficient(alt)
-        return (alt - 35000) * 2 / 10000
-    end
-
-    function obj:reactThreat(shot)
-        return
-    end
-
-    function obj:quickExit(shot)
-        if shot:getTargetAspectAngle() < AspectAngle.QuickExit then
-            self.fQuickE = true;
-        end
-    end
-
+    obj.topSpeed    = 1200
+    obj.speedReduce = 10
+    obj.huskyRange  = 20
+    
     return obj
 end
 
 function AAM_P_77()
-    local obj = {}
+    local obj = AAM_ARH()
 
-    obj.RMAX     = 42
-    obj.DOR      = 25
-    obj.MAR      = 21
-    obj.DR       = 19
-    obj.STERNWEZ = 15
-
-    obj.timeout  = 80 
-    obj.fQuickE  = false
-    obj.guiding  = true
-    obj.husky    = false
-
-    function obj:valid(shot)
-        if self.husky == false then
-            Log(shot:getID(), "RTO: Shot Val: Ceased guidance before Husky",false)
-            return false
-        end
-        if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ",false)
-            return true
-        end
-        if shot:getShotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Out of RMAX)",false)
-            return false
-        end
-        if shot:getShotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Inside RMAX Outside MAR",false)
-            if self.fQuickE then
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Quick Exit)",false)
-                return false
-            end
-            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)",false)
-                return false
-            end
-        end
-        if shot:getShotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Outside DR",false)
-            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)",false)
-                return false
-            end
-        end
-        if shot:getShotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Inside DR",false)
-            if shot:getTargetAspectAngle() >= AspectAngle.Drag then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Drag)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)",false)
-                return false
-            end
-        end
-    end
-
-    function obj:checkGuidance(shot)
-        if self.guiding == false then
-            return
-        end
-        if self.husky == true then
-            return
-        end
-        if shot:isMissileTrackingTgt() == false then
-            Log(shot:getID(), "RTO: Guidance Stop",false)
-            self.guiding = false
-        end
-    end
-
-    function obj:isHusky(shot)
-        if self.guiding == false then
-            return
-        end
-        if self.husky == true then
-            return
-        end
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
-        local d = m * t - 10 * t * t / 2
-        if shot:getTargetToShotPosDistance() - (d * feet_per_meter / feet_per_nm) < 20 then
-            if self.guiding == true then
-                Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " Husky",shot:getLauncherCoalition())
-                self.husky = true
-                shot:destroy()
-            end
-        end
-    end
-
-    function obj:isTimeout(shot)
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
-        local d = m * t - 10 * t * t / 2
-        if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
-            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
-            return true
-        else
-            return false
-        end
-    end
-
-    function obj:hasEnergy(shot)
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
-        local d = m - 10 * t
-        return d > 343 * 0.5
-    end
-
-    function obj:hasCriteria()
-        return true
-    end
-
-    function obj:altitudeCoefficient(alt)
-        return (alt - 35000) * 2 / 10000
-    end
-
-    function obj:reactThreat(shot)
-        return
-    end
-
-    function obj:quickExit(shot)
-        if shot:getTargetAspectAngle() < AspectAngle.QuickExit then
-            self.fQuickE = true;
-        end
-    end
-
+    obj.topSpeed    = 1029
+    obj.speedReduce = 10
+    obj.huskyRange  = 20
+    
     return obj
 end
 
 function AAM_P_27PE()
-    local obj = {}
+    local obj = AAM_ARH()
 
-    obj.RMAX     = 39
-    obj.DOR      = 25
-    obj.MAR      = 13
-    obj.DR       = 15
-    obj.STERNWEZ = 9
-
-    obj.timeout  = 80 
-    obj.fQuickE  = false
+    obj.topSpeed    = 1029
+    obj.speedReduce = 10
+    obj.huskyRange  = 20
 
     function obj:valid(shot)
         if shot:isMissileTrackingTgt() == false then
             Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Ceased STT)",false)
             return false
-        end
-        if shot:getShotRangeNm() <  self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Kill Confirmed: Shot Within STERNWEZ",false)
-            return true
-        end
-        if shot:getShotRangeNm() >  self.RMAX     + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Out of RMAX)",false)
-            return false
-        end
-        if shot:getShotRangeNm() >  self.MAR      + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Inside RMAX Outside MAR",false)
-            if self.fQuickE then
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Quick Exit)",false)
-                return false
-            end
-            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)",false)
-                return false
-            end
-        end
-        if shot:getShotRangeNm() >= self.DR       + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Outside DR",false)
-            if shot:getTargetAspectAngle() >= AspectAngle.Beam then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Beam)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (At or Colder than Beam)",false)
-                return false
-            end
-        end
-        if shot:getShotRangeNm() >= self.STERNWEZ + shot:getTgtAltFactorNm() + shot:getShotAltFactorNm() then
-            Log(shot:getID(), "RTO: Shot Val: Shot Inside DR",false)
-            if shot:getTargetAspectAngle() >= AspectAngle.Drag then
-                Log(shot:getID(), "RTO: Shot Val: Kill Confirmed (Hotter than Drag)",false)
-                return true
-            else
-                Log(shot:getID(), "RTO: Shot Val: Shot Trashed (Drag)",false)
-                return false
-            end
         end
     end
 
@@ -705,62 +210,16 @@ function AAM_P_27PE()
         return false
     end
 
-    function obj:isTimeout(shot)
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 1543 + 343 * shot:getTgtAltFactorNm() / 2
-        local d = m * t - 10 * t * t / 2
-        if d * feet_per_meter / feet_per_nm > shot:getTargetToShotPosDistance() then
-            Log(shot:getID(), "RTO: " .. shot:getLauncherCallsign() .. " TimeOut",shot:getLauncherCoalition())
-            return true
-        else
-            return false
-        end
-    end
-
-    function obj:hasEnergy(shot)
-        local t = timer.getTime() - shot:getShotTime()
-        local m = 686 + 343 * shot:getTgtAltFactorNm() / 3
-        local d = m - 10 * t
-        return d > 343 * 0.5
-    end
-
-    function obj:hasCriteria()
-        return true
-    end
-
-    function obj:altitudeCoefficient(alt)
-        return (alt - 20000) * 3/ 10000
-    end
-
-    function obj:reactThreat(shot)
-        return
-    end
-
-    function obj:quickExit(shot)
-        if shot:getTargetAspectAngle() < AspectAngle.QuickExit then
-            self.fQuickE = true;
-        end
-    end
-
     return obj
 end
 
 function AGM_AGM_88()
-    local obj = {}
+    local obj = AAM_ARH()
 
-    obj.RMAX     = 60
-    obj.DOR      = 25
-    obj.MAR      = 13
-    obj.DR       = 15
-    obj.STERNWEZ = 9
-
-    obj.timeout  = 90 
+    obj.timeout = 90
+    obj.RMAX    = 60
 
     function obj:valid(shot)
-        if shot:isMissileTrackingTgt() == false then
-            Log(shot:getID(), "RTO: Shot Cal: Shot Trashed (HARM lost target)",false)
-            return false
-        end
         if shot:isTargetRadarActive() == false then
             Log(shot:getID(), "RTO: Shot Cal: Shot Trashed (Target ceasing radar emission)",false)
             return false
@@ -796,16 +255,8 @@ function AGM_AGM_88()
         return false
     end
 
-    function obj:hasCriteria()
-        return true
-    end
-
     function obj:hasEnergy(shot)
         return true
-    end
-
-    function obj:altitudeCoefficient(alt)
-        return (alt - 35000) * 2 / 10000
     end
 
     function obj:reactThreat(shot)
@@ -813,10 +264,6 @@ function AGM_AGM_88()
         local tot = (shot:getShotRangeNm() * self.timeout) / (self.RMAX + shot:getShotAltFactorNm())
         timer.scheduleFunction(ceaseSamRadar,  con, timer.getTime()       + math.random(14) + 16)
         timer.scheduleFunction(activeSamRadar, con, timer.getTime() + tot + math.random(30) - 15)
-    end
-
-    function obj:quickExit(shot)
-        return
     end
 
     return obj
@@ -857,16 +304,15 @@ function Shot(id,weapon,missile)
 
     obj.isTargetAi = obj.target:getPlayerName() == nil
 
-    obj.targetAspectAngle       = 180                   -- shot position to target aspect angle
     obj.targetAltitude          = 35000;                -- target altitude
     obj.targetToShotPosDistance = 99999;                -- target to shot position distance
 
     local l  = weapon:getLauncher():getPosition().p
     local t  = weapon:getTarget():getPosition().p
 
-    obj.shotRange               = math.sqrt((l.x-t.x)^2 + (l.y-t.y)^2 + (l.z-t.z)^2) * feet_per_meter / feet_per_nm   -- shot range
-    obj.shotAltitude            = l.y * feet_per_meter                                                                -- shot altitude
-    obj.time = timer.getTime()                                                                                        -- shot time
+    obj.shotRange    = math.sqrt((l.x-t.x)^2 + (l.y-t.y)^2 + (l.z-t.z)^2) * feet_per_meter / feet_per_nm   -- shot range
+    obj.shotAltitude = l.y * feet_per_meter                                                                -- shot altitude
+    obj.time         = timer.getTime()                                                                     -- shot time
     
     Log(obj.id, "RTO: Copy Shot " .. obj.weapon:getTypeName() .. " to " .. obj.targetCallsign,false)
 
@@ -919,30 +365,9 @@ function Shot(id,weapon,missile)
 
         self.targetToShotPosDistance = math.sqrt(p.x^2 + p.y^2 + p.z^2) * feet_per_meter / feet_per_nm
 
-        local rh = (1 + (math.atan2(p.z,  p.x ) / math.pi)) * 180
-        local oh = ((math.atan2(ot.z, ot.x) / math.pi)) * 180
-
-        if oh < 0 then
-            oh = oh + 360
-        end
-        
-        local raa = 0
-        
-        if oh - rh < 180 then
-            raa = - (oh - rh)
-        else
-            raa = 360 - (oh - rh)
-        end
-        
-        self.targetAspectAngle = math.abs(raa)
-
-        self.missile:quickExit(self)
-
         self.missile:checkGuidance(self)
 
         self.missile:isHusky(self)
-
-        -- trigger.action.outText("TA : " .. string.format("%.0f",self.targetAltitude) .. " AA : " .. string.format("%.0f",self.targetAspectAngle),  1, true) 
     end
 
     function obj:destroy()
@@ -955,20 +380,20 @@ function Shot(id,weapon,missile)
         self.weapon:destroy()
     end
 
-    function obj:getTargetCoalition()
-        return self.targetCoalition
-    end
-
-    function obj:getTargetCallsign()
-        return self.targetCallsign
-    end
-
     function obj:getLauncherCoalition()
         return self.launcherCoalition
     end
 
     function obj:getLauncherCallsign()
         return self.launcherCallsign
+    end
+
+    function obj:getTargetCoalition()
+        return self.targetCoalition
+    end
+
+    function obj:getTargetCallsign()
+        return self.targetCallsign
     end
 
     function obj:getTargetToShotPosDistance()
@@ -987,16 +412,6 @@ function Shot(id,weapon,missile)
             return nil
         end
         return self.target:getGroup():getController()
-    end
-
-    function obj:getControllerOfTargetUnit()
-        if self.target == nil then
-            return nil
-        end
-        if self.target:isExist() == false then
-            return nil
-        end
-        return self.target:getController()
     end
 
     function obj:isMissileTrackingTgt()
@@ -1032,10 +447,6 @@ function Shot(id,weapon,missile)
 
     function obj:getShotTime()
         return self.time
-    end
-
-    function obj:getTargetAspectAngle()
-        return self.targetAspectAngle
     end
 
     function obj:getShotRangeNm()
@@ -1074,6 +485,7 @@ function RTO()
     local obj = {}
     
     obj.shot = {}
+    obj.id   = 0
 
     function obj:onEvent(event)
         if event.id ~= world.event.S_EVENT_SHOT then
@@ -1097,9 +509,9 @@ function RTO()
             return
         end
 
-        id = id + 1
+        obj.id = obj.id + 1
         
-        self.shot[#self.shot + 1] = Shot(id, event.weapon, missile)
+        self.shot[#self.shot + 1] = Shot(obj.id, event.weapon, missile)
 
         self.shot[#self.shot]:reactThreat()
     end
@@ -1126,7 +538,3 @@ end
 rto = RTO()
 
 world.addEventHandler(rto)
-
--- for i = 1, 100 do
---     timer.scheduleFunction(rto.calc,  rto, timer.getTime() + 0.01 * i)
--- end
